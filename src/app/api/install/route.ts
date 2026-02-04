@@ -42,3 +42,36 @@ description: Activates the ${name} specialist
         return NextResponse.json({ error: "Failed to install agent to workspace" }, { status: 500 });
     }
 }
+
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const agentId = searchParams.get("get");
+
+    if (!agentId) return new NextResponse("Target missing", { status: 400 });
+
+    // In a real app, you'd fetch from a DB. Here we use marketplace.json
+    const agent = require("@/data/marketplace.json").find((a: any) => a.id === agentId);
+    if (!agent) return new NextResponse("Agent not found", { status: 404 });
+
+    const slug = agent.name.replace(/\s+/g, "-").toLowerCase();
+
+    // Return a powershell script that installs the agent
+    const script = `
+echo "Initializing AgentArmy Deployment: ${agent.name}..."
+if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }
+if (!(Test-Path "agents/${slug}")) { New-Item -ItemType Directory -Force -Path "agents/${slug}" }
+$content = @"
+---
+name: ${agent.name}
+description: ${agent.persona}
+---
+${agent.instructions}
+"@
+$content | Out-File -FilePath "agents/${slug}/SKILL.md" -Encoding utf8
+echo "[SUCCESS] ${agent.name} is now operational in your workspace."
+`;
+
+    return new NextResponse(script, {
+        headers: { "Content-Type": "text/plain" }
+    });
+}

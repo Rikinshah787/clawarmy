@@ -299,17 +299,17 @@ pause`;
     <main className="min-h-screen p-8 md:p-16 flex flex-col gap-12 max-w-7xl mx-auto tactical-grid scanlines relative">
       <div className="fixed inset-0 pointer-events-none opacity-20 tactical-grid"></div>
 
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-6 glass rounded-2xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-4 glass rounded-2xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
         <div className="flex flex-col gap-2">
-          <h1 className="text-5xl font-bold tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
             <img
               src="/mascot.png"
               alt="AgentArmy"
-              className="w-35 h-35 -rotate-3 hover:rotate-0 transition-all duration-700 drop-shadow-[0_0_20px_rgba(255,0,0,0.2)] filter brightness-110"
+              className="w-28 h-28 -rotate-3 hover:rotate-0 transition-all duration-700 drop-shadow-[0_0_15px_rgba(255,0,0,0.2)] filter brightness-110"
             />
-            <span className="tech-font">Agent</span><span className="tech-font bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent text-4xl">Army</span>
+            <span className="tech-font">Agent</span><span className="tech-font bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Army</span>
           </h1>
-          <p className="text-neutral-400 text-sm tech-font tracking-widest opacity-80 uppercase">
+          <p className="text-neutral-500 text-[10px] tech-font tracking-[0.3em] opacity-80 uppercase">
             // Mission Status: Ready_to_Deploy
           </p>
         </div>
@@ -326,6 +326,27 @@ pause`;
               className={`px-6 py-2 rounded-xl border text-sm font-semibold transition-all ${view === 'marketplace' ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-neutral-500'}`}
             >
               Marketplace
+            </button>
+            <button
+              onClick={async () => {
+                setInstallStatus({ type: "loading", msg: "Establishing Satellite Link..." });
+                try {
+                  const res = await fetch("/api/sync", { method: "POST", body: JSON.stringify({ message: "Sync from Command Center" }) });
+                  const data = await res.json();
+                  if (data.success) {
+                    setInstallStatus({ type: "success", msg: "✅ " + data.message });
+                  } else {
+                    throw new Error(data.error);
+                  }
+                } catch (e: any) {
+                  setInstallStatus({ type: "error", msg: "❌ " + e.message });
+                }
+                setTimeout(() => setInstallStatus(null), 5000);
+              }}
+              className="px-4 py-2 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-all flex items-center gap-2 glow tech-font"
+            >
+              <span>🛰️</span>
+              SYNC_TO_SATELLITE
             </button>
           </div>
           <div className="flex flex-col gap-2">
