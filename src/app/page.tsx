@@ -302,7 +302,11 @@ pause`;
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-8 glass rounded-3xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
         <div className="flex flex-col gap-2">
           <h1 className="text-5xl font-bold tracking-tight flex items-center gap-3">
-            <img src="/mascot.png" alt="AgentArmy" className="w-20 h-20 -rotate-3 hover:rotate-0 transition-transform duration-500" />
+            <img
+              src="/mascot.png"
+              alt="AgentArmy"
+              className="w-56 h-56 -rotate-3 hover:rotate-0 transition-all duration-700 drop-shadow-[0_0_30px_rgba(255,0,0,0.3)] filter brightness-110"
+            />
             <span className="tech-font">Agent</span><span className="tech-font bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Army</span>
           </h1>
           <p className="text-neutral-400 text-sm tech-font tracking-widest opacity-80 uppercase">
@@ -352,309 +356,309 @@ pause`;
         </div>
       </header>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-        {/* Editor Side */}
-        <div className="glass p-8 rounded-3xl flex flex-col gap-6 glow targeting-reticle targeting-reticle-tl targeting-reticle-tr opacity-95 hover:opacity-100 transition-opacity">
-          <h2 className="text-2xl font-bold mb-2 text-white flex items-center gap-2 tech-font tracking-tighter">
-            <span className="w-2 h-2 rounded-full bg-red-500 led-active animate-pulse"></span>
-            COMMAND CENTER
-          </h2>
+      {view === "architect" ? (
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+          {/* Editor Side */}
+          <div className="glass p-8 rounded-3xl flex flex-col gap-6 glow targeting-reticle targeting-reticle-tl targeting-reticle-tr opacity-95 hover:opacity-100 transition-opacity">
+            <h2 className="text-2xl font-bold mb-2 text-white flex items-center gap-2 tech-font tracking-tighter">
+              <span className="w-2 h-2 rounded-full bg-red-500 led-active animate-pulse"></span>
+              COMMAND CENTER
+            </h2>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-neutral-500 tech-font uppercase tracking-widest">Agent_Designation</label>
-            <input
-              type="text"
-              value={config.name}
-              onChange={(e) => setConfig({ ...config, name: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-red-500/30 text-white tech-font"
-              placeholder="SIGNAL-01"
-            />
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-neutral-500 tech-font uppercase tracking-widest">Agent_Designation</label>
+              <input
+                type="text"
+                value={config.name}
+                onChange={(e) => setConfig({ ...config, name: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-red-500/30 text-white tech-font"
+                placeholder="SIGNAL-01"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Core Persona</label>
+              <textarea
+                rows={3}
+                value={config.persona}
+                onChange={(e) => setConfig({ ...config, persona: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
+                placeholder="Describe how the agent behaves..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Instructions</label>
+              <textarea
+                rows={5}
+                value={config.instructions}
+                onChange={(e) => setConfig({ ...config, instructions: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
+                placeholder="Specific guidelines for the agent..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Strategic Priority</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "mvp", label: "MVP", color: "from-orange-500/20 to-orange-500/10 border-orange-500/30 text-orange-400" },
+                  { id: "quality", label: "Quality", color: "from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-400" },
+                  { id: "business", label: "Business", color: "from-emerald-500/20 to-emerald-500/10 border-emerald-500/30 text-emerald-400" }
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPriority(p.id as any)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${priority === p.id
+                      ? `bg-gradient-to-tr ${p.color} ring-2 ring-white/10`
+                      : "bg-white/5 border-white/10 text-neutral-500 hover:bg-white/10"
+                      }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleDirectInstall()}
+              className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+            >
+              <span className="tracking-tighter">⚡ EXECUTE_INSTALLATION</span>
+              <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">Target: ./agents/ (Auto-Sync)</span>
+            </button>
+
+            <button
+              onClick={handleExport}
+              className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 tech-font"
+            >
+              <span className="tracking-tighter uppercase">Download_Tactical_Kit</span>
+              <span className="text-[9px] opacity-70 font-normal uppercase tracking-[0.2em]">Format: .ZIP (Portable)</span>
+            </button>
+
+            {installStatus && (
+              <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${installStatus.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                installStatus.type === "error" ? "bg-red-500/10 border-red-500/20 text-red-400" :
+                  "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                }`}>
+                {installStatus.msg}
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-neutral-400">Core Persona</label>
-            <textarea
-              rows={3}
-              value={config.persona}
-              onChange={(e) => setConfig({ ...config, persona: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
-              placeholder="Describe how the agent behaves..."
-            />
-          </div>
+          {/* Preview Side */}
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center px-4 tech-font">
+              <h2 className="text-xl font-bold text-white tracking-widest uppercase opacity-80 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-red-500 led-active"></span>
+                SKILL.md_PREVIEW
+              </h2>
+              <span className="px-3 py-1 bg-red-500/10 text-red-400 text-[10px] font-black rounded border border-red-500/20 uppercase tracking-[0.3em] led-active">
+                Real-Time
+              </span>
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-neutral-400">Instructions</label>
-            <textarea
-              rows={5}
-              value={config.instructions}
-              onChange={(e) => setConfig({ ...config, instructions: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
-              placeholder="Specific guidelines for the agent..."
-            />
+            <div className="glass p-8 rounded-3xl h-[600px] overflow-auto glow font-mono text-sm leading-relaxed text-neutral-300 relative targeting-reticle targeting-reticle-tr targeting-reticle-bl bg-neutral-900/50">
+              <div className="absolute top-0 right-0 p-2 opacity-10 tech-font pointer-events-none text-[10px]">INTEL_STREAM_v3.1</div>
+              <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
+                {generateMarkdown()}
+              </pre>
+            </div>
           </div>
+        </section>
+      ) : (
+        <section className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-3xl font-bold text-white tech-font tracking-tighter">MISSION_BOARD</h2>
+                {selectedAgents.length > 0 && (
+                  <span className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded-md text-[10px] font-bold tech-font uppercase tracking-widest led-active">
+                    {selectedAgents.length} SQUAD_MEMBERS_SELECTED
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                placeholder="Search agents by name, description, or tags..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="bg-white/5 border border-white/10 rounded-xl px-6 py-3 w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-white transition-all"
+              />
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-neutral-400">Strategic Priority</label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: "mvp", label: "MVP", color: "from-orange-500/20 to-orange-500/10 border-orange-500/30 text-orange-400" },
-                { id: "quality", label: "Quality", color: "from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-400" },
-                { id: "business", label: "Business", color: "from-emerald-500/20 to-emerald-500/10 border-emerald-500/30 text-emerald-400" }
-              ].map((p) => (
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              {["all", "security", "design", "performance", "backend", "testing", "devops", "database", "mobile", "seo", "reliability", "refactoring", "documentation"].map(cat => (
                 <button
-                  key={p.id}
-                  onClick={() => setPriority(p.id as any)}
-                  className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${priority === p.id
-                    ? `bg-gradient-to-tr ${p.color} ring-2 ring-white/10`
-                    : "bg-white/5 border-white/10 text-neutral-500 hover:bg-white/10"
+                  key={cat}
+                  onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${selectedCategory === cat
+                    ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
+                    : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
                     }`}
                 >
-                  {p.label}
+                  {cat === "all" ? "All Agents" : cat}
                 </button>
               ))}
             </div>
           </div>
 
-          <button
-            onClick={() => handleDirectInstall()}
-            className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
-          >
-            <span className="tracking-tighter">⚡ EXECUTE_INSTALLATION</span>
-            <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">Target: ./agents/ (Auto-Sync)</span>
-          </button>
+          {(() => {
+            // Filter logic
+            const filtered = marketplaceData.filter(a => {
+              const matchesSearch =
+                a.name.toLowerCase().includes(search.toLowerCase()) ||
+                a.persona.toLowerCase().includes(search.toLowerCase()) ||
+                a.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
+              const matchesCategory = selectedCategory === "all" || a.category === selectedCategory;
+              return matchesSearch && matchesCategory;
+            });
 
-          <button
-            onClick={handleExport}
-            className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 tech-font"
-          >
-            <span className="tracking-tighter uppercase">Download_Tactical_Kit</span>
-            <span className="text-[9px] opacity-70 font-normal uppercase tracking-[0.2em]">Format: .ZIP (Portable)</span>
-          </button>
+            // Pagination logic
+            const totalPages = Math.ceil(filtered.length / AGENTS_PER_PAGE);
+            const startIndex = (currentPage - 1) * AGENTS_PER_PAGE;
+            const paginatedAgents = filtered.slice(startIndex, startIndex + AGENTS_PER_PAGE);
 
-          {installStatus && (
-            <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${installStatus.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-              installStatus.type === "error" ? "bg-red-500/10 border-red-500/20 text-red-400" :
-                "bg-blue-500/10 border-blue-500/20 text-blue-400"
-              }`}>
-              {installStatus.msg}
-            </div>
-          )}
-        </div>
-
-        {/* Preview Side */}
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center px-4 tech-font">
-            <h2 className="text-xl font-bold text-white tracking-widest uppercase opacity-80 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-red-500 led-active"></span>
-              SKILL.md_PREVIEW
-            </h2>
-            <span className="px-3 py-1 bg-red-500/10 text-red-400 text-[10px] font-black rounded border border-red-500/20 uppercase tracking-[0.3em] led-active">
-              Real-Time
-            </span>
-          </div>
-
-          <div className="glass p-8 rounded-3xl h-[600px] overflow-auto glow font-mono text-sm leading-relaxed text-neutral-300 relative targeting-reticle targeting-reticle-tr targeting-reticle-bl bg-neutral-900/50">
-            <div className="absolute top-0 right-0 p-2 opacity-10 tech-font pointer-events-none text-[10px]">INTEL_STREAM_v3.1</div>
-            <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
-              {generateMarkdown()}
-            </pre>
-          </div>
-        </div>
-      </section>
-      ) : (
-      <section className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <h2 className="text-3xl font-bold text-white tech-font tracking-tighter">MISSION_BOARD</h2>
-              {selectedAgents.length > 0 && (
-                <span className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded-md text-[10px] font-bold tech-font uppercase tracking-widest led-active">
-                  {selectedAgents.length} SQUAD_MEMBERS_SELECTED
-                </span>
-              )}
-            </div>
-            <input
-              type="text"
-              placeholder="Search agents by name, description, or tags..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="bg-white/5 border border-white/10 rounded-xl px-6 py-3 w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-white transition-all"
-            />
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
-            {["all", "security", "design", "performance", "backend", "testing", "devops", "database", "mobile", "seo", "reliability", "refactoring", "documentation"].map(cat => (
-              <button
-                key={cat}
-                onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${selectedCategory === cat
-                  ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
-                  : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
-                  }`}
-              >
-                {cat === "all" ? "All Agents" : cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {(() => {
-          // Filter logic
-          const filtered = marketplaceData.filter(a => {
-            const matchesSearch =
-              a.name.toLowerCase().includes(search.toLowerCase()) ||
-              a.persona.toLowerCase().includes(search.toLowerCase()) ||
-              a.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
-            const matchesCategory = selectedCategory === "all" || a.category === selectedCategory;
-            return matchesSearch && matchesCategory;
-          });
-
-          // Pagination logic
-          const totalPages = Math.ceil(filtered.length / AGENTS_PER_PAGE);
-          const startIndex = (currentPage - 1) * AGENTS_PER_PAGE;
-          const paginatedAgents = filtered.slice(startIndex, startIndex + AGENTS_PER_PAGE);
-
-          return (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedAgents.length > 0 ? paginatedAgents.map(agent => (
-                  <div
-                    key={agent.id}
-                    onClick={() => toggleAgentSelection(agent.id)}
-                    className={`glass p-6 rounded-3xl flex flex-col gap-4 transition-all group relative overflow-hidden h-full cursor-pointer targeting-reticle targeting-reticle-tl targeting-reticle-br ${selectedAgents.includes(agent.id)
-                      ? 'border-2 border-red-500/50 bg-red-500/5 glow'
-                      : 'hover:border-red-500/30 hover:bg-white/5'
-                      }`}
-                  >
-                    {/* Checkbox */}
-                    <div className="absolute top-4 left-4 z-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedAgents.includes(agent.id)}
-                        onChange={() => toggleAgentSelection(agent.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 checked:bg-red-500 checked:border-red-500 cursor-pointer transition-all"
-                      />
-                    </div>
-
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <span className="text-6xl text-red-400">🤖</span>
-                    </div>
-
-                    <div className="flex justify-between items-start gap-2 mt-6">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-neutral-500 mb-1 flex items-center gap-1 tech-font">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 led-active animate-pulse"></span>
-                          Active_Mission
-                        </span>
-                        <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors uppercase tracking-tight tech-font">{agent.name}</h3>
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedAgents.length > 0 ? paginatedAgents.map(agent => (
+                    <div
+                      key={agent.id}
+                      onClick={() => toggleAgentSelection(agent.id)}
+                      className={`glass p-6 rounded-3xl flex flex-col gap-4 transition-all group relative overflow-hidden h-full cursor-pointer targeting-reticle targeting-reticle-tl targeting-reticle-br ${selectedAgents.includes(agent.id)
+                        ? 'border-2 border-red-500/50 bg-red-500/5 glow'
+                        : 'hover:border-red-500/30 hover:bg-white/5'
+                        }`}
+                    >
+                      {/* Checkbox */}
+                      <div className="absolute top-4 left-4 z-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedAgents.includes(agent.id)}
+                          onChange={() => toggleAgentSelection(agent.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 checked:bg-red-500 checked:border-red-500 cursor-pointer transition-all"
+                        />
                       </div>
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-extrabold uppercase whitespace-nowrap border ${agent.priority === 'mvp' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                        agent.priority === 'quality' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        }`}>
-                        {agent.priority === 'quality' ? 'Elite' : agent.priority === 'business' ? 'Special Ops' : 'Recon'}
-                      </span>
-                    </div>
 
-                    <p className="text-neutral-400 text-sm flex-grow line-clamp-3 leading-relaxed font-serif italic">"{agent.persona}"</p>
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <span className="text-6xl text-red-400">🤖</span>
+                      </div>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      {agent.capabilities.map(c => (
-                        <span key={c} className="text-[9px] text-neutral-500 bg-white/5 px-2 py-1 rounded border border-white/5 uppercase font-black tracking-widest">
-                          {c}
+                      <div className="flex justify-between items-start gap-2 mt-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold tracking-widest uppercase text-neutral-500 mb-1 flex items-center gap-1 tech-font">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 led-active animate-pulse"></span>
+                            Active_Mission
+                          </span>
+                          <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors uppercase tracking-tight tech-font">{agent.name}</h3>
+                        </div>
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-extrabold uppercase whitespace-nowrap border ${agent.priority === 'mvp' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                          agent.priority === 'quality' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          }`}>
+                          {agent.priority === 'quality' ? 'Elite' : agent.priority === 'business' ? 'Special Ops' : 'Recon'}
                         </span>
+                      </div>
+
+                      <p className="text-neutral-400 text-sm flex-grow line-clamp-3 leading-relaxed font-serif italic">"{agent.persona}"</p>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {agent.capabilities.map(c => (
+                          <span key={c} className="text-[9px] text-neutral-500 bg-white/5 px-2 py-1 rounded border border-white/5 uppercase font-black tracking-widest">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
+                        className="mt-2 w-full bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg hover:shadow-red-500/20"
+                      >
+                        Import to Workspace
+                      </button>
+                    </div>
+                  )) : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-neutral-500">
+                      <span className="text-6xl mb-4">🔍</span>
+                      <p className="text-lg">No agents found matching your criteria</p>
+                      <p className="text-sm">Try adjusting your search or category filter</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-xl font-semibold transition-all ${currentPage === page
+                            ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
+                            : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
+                            }`}
+                        >
+                          {page}
+                        </button>
                       ))}
                     </div>
 
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
-                      className="mt-2 w-full bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg hover:shadow-red-500/20"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
                     >
-                      Import to Workspace
+                      Next
                     </button>
                   </div>
-                )) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-16 text-neutral-500">
-                    <span className="text-6xl mb-4">🔍</span>
-                    <p className="text-lg">No agents found matching your criteria</p>
-                    <p className="text-sm">Try adjusting your search or category filter</p>
-                  </div>
                 )}
-              </div>
 
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                  >
-                    Previous
-                  </button>
-
-                  <div className="flex gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl font-semibold transition-all ${currentPage === page
-                          ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
-                          : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
-                          }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                  >
-                    Next
-                  </button>
+                {/* Results Count */}
+                <div className="text-center text-neutral-500 text-sm">
+                  Showing {paginatedAgents.length} of {filtered.length} agents
+                  {selectedCategory !== "all" && ` in ${selectedCategory}`}
                 </div>
-              )}
+              </>
+            );
+          })()}
 
-              {/* Results Count */}
-              <div className="text-center text-neutral-500 text-sm">
-                Showing {paginatedAgents.length} of {filtered.length} agents
-                {selectedCategory !== "all" && ` in ${selectedCategory}`}
-              </div>
-            </>
-          );
-        })()}
+          {/* Bulk Import Button */}
+          {selectedAgents.length > 0 && (
+            <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-4">
+              <button
+                onClick={handleBulkImport}
+                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl ring-2 ring-white/20 active:scale-95 transition-all flex items-center gap-3"
+              >
+                <span className="text-2xl">🚀</span>
+                <div className="flex flex-col items-start">
+                  <span>Import {selectedAgents.length} Agents</span>
+                  <span className="text-xs opacity-80">Install all selected to workspace</span>
+                </div>
+              </button>
+            </div>
+          )}
 
-        {/* Bulk Import Button */}
-        {selectedAgents.length > 0 && (
-          <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-4">
-            <button
-              onClick={handleBulkImport}
-              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl ring-2 ring-white/20 active:scale-95 transition-all flex items-center gap-3"
-            >
-              <span className="text-2xl">🚀</span>
-              <div className="flex flex-col items-start">
-                <span>Import {selectedAgents.length} Agents</span>
-                <span className="text-xs opacity-80">Install all selected to workspace</span>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {installStatus && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-xl border bg-red-500/10 border-red-500/20 text-red-400 shadow-2xl glass min-w-[300px] text-center backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 ring-1 ring-white/10 tech-font text-xs tracking-wider">
-            {installStatus.msg}
-          </div>
-        )}
-      </section>
-
-      <footer className="mt-auto py-12 border-t border-white/5 flex flex-col items-center gap-8 relative p-8 glass rounded-3xl targeting-reticle targeting-reticle-bl targeting-reticle-br">
+          {installStatus && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-xl border bg-red-500/10 border-red-500/20 text-red-400 shadow-2xl glass min-w-[300px] text-center backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 ring-1 ring-white/10 tech-font text-xs tracking-wider">
+              {installStatus.msg}
+            </div>
+          )}
+        </section>
+      )}  <footer className="mt-auto py-12 border-t border-white/5 flex flex-col items-center gap-8 relative p-8 glass rounded-3xl targeting-reticle targeting-reticle-bl targeting-reticle-br">
         <div className="flex items-center gap-3">
-          <img src="/mascot.png" alt="AgentArmy" className="w-12 h-12 grayscale hover:grayscale-0 transition-all" />
+          <img src="/mascot.png" alt="AgentArmy" className="w-16 h-16 grayscale hover:grayscale-0 transition-all drop-shadow-lg" />
           <p className="text-neutral-500 text-xs tech-font tracking-widest">
             // Built for the Antigravity_Ecosystem &bull; v2.0
           </p>
