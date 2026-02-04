@@ -300,7 +300,7 @@ pause`;
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-2">
           <h1 className="text-5xl font-bold tracking-tight flex items-center gap-3">
-            <img src="/mascot.png" alt="AgentArmy" className="w-16 h-16 rounded-xl" />
+            <img src="/mascot.png" alt="AgentArmy" className="w-16 h-16" />
             Agent<span className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Army</span>
           </h1>
           <p className="text-neutral-400 text-lg">
@@ -641,7 +641,7 @@ pause`;
 
       <footer className="mt-auto py-8 border-t border-white/5 flex flex-col items-center gap-4">
         <div className="flex items-center gap-3">
-          <img src="/mascot.png" alt="AgentArmy" className="w-10 h-10 rounded-lg" />
+          <img src="/mascot.png" alt="AgentArmy" className="w-10 h-10" />
           <p className="text-neutral-500 text-sm">
             Built for the Antigravity Ecosystem &bull; AgentArmy v2.0
           </p>
