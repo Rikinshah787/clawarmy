@@ -331,17 +331,20 @@ pause`;
               onClick={async () => {
                 setInstallStatus({ type: "loading", msg: "Establishing Satellite Link..." });
                 try {
-                  const res = await fetch("/api/sync", { method: "POST", body: JSON.stringify({ message: "Sync from Command Center" }) });
+                  const res = await fetch("/api/sync", {
+                    method: "POST",
+                    body: JSON.stringify({ message: `Satellite Mission Update: ${config.name}` })
+                  });
                   const data = await res.json();
-                  if (data.success) {
-                    setInstallStatus({ type: "success", msg: "✅ " + data.message });
+                  if (data.error) {
+                    setInstallStatus({ type: "error", msg: `🚨 ${data.error}: ${data.advice || "Check logs."}` });
                   } else {
-                    throw new Error(data.error);
+                    setInstallStatus({ type: "success", msg: "✅ " + data.message });
                   }
                 } catch (e: any) {
-                  setInstallStatus({ type: "error", msg: "❌ " + e.message });
+                  setInstallStatus({ type: "error", msg: "❌ Connection Failure" });
                 }
-                setTimeout(() => setInstallStatus(null), 5000);
+                setTimeout(() => setInstallStatus(null), 8000);
               }}
               className="px-4 py-2 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-all flex items-center gap-2 glow tech-font"
             >
@@ -366,7 +369,7 @@ if "%opt%"=="2" goto loop
 
 :sync
 echo Initiating Mission Sync...
-powershell -Command "iwr -useb http://${window.location.host}/api/install?sync=all | iex"
+powershell -Command "iwr -useb https://${window.location.host}/api/install?sync=all | iex"
 echo.
 echo Sync Successful.
 pause
@@ -375,7 +378,7 @@ exit
 :loop
 cls
 echo [ACTIVE] ClawArmy Auto-Sync Heartbeat...
-powershell -Command "iwr -useb http://${window.location.host}/api/install?sync=all | iex"
+powershell -Command "iwr -useb https://${window.location.host}/api/install?sync=all | iex"
 echo.
 echo [IDLE] Next synchronization in 300 seconds...
 timeout /t 300
@@ -652,7 +655,7 @@ goto loop`;
                           onClick={(e) => {
                             e.stopPropagation();
                             // Generate a universal PowerShell one-liner that fetches the agent script from this server
-                            const cmd = `powershell -Command "iwr -useb http://${window.location.host}/api/install?get=${agent.id} | iex"`;
+                            const cmd = `powershell -Command "iwr -useb https://${window.location.host}/api/install?get=${agent.id} | iex"`;
                             navigator.clipboard.writeText(cmd);
                             setInstallStatus({ type: "success", msg: "Magic Mission Link Copied! Send this to your friend." });
                             setTimeout(() => setInstallStatus(null), 4000);

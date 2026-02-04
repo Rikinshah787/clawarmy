@@ -14,12 +14,23 @@ export async function POST(req: NextRequest) {
         // 2. Git Commit
         const commitMsg = message || `Deploying new agents via ClawArmy Command Center [${new Date().toISOString()}]`;
 
-        // SECURE: Use array of arguments to prevent command injection
+        // SECURE: Strict Identity Guard
+        const gitName = process.env.GIT_COMMIT_NAME;
+        const gitEmail = process.env.GIT_COMMIT_EMAIL;
+
+        if (!gitEmail) {
+            console.error("IDENTITY_GUARD_ALERT: GIT_COMMIT_EMAIL is missing in production.");
+            return NextResponse.json({
+                error: "Identity Mismatch: Vercel environment variables missing.",
+                advice: "Commander, you must set GIT_COMMIT_EMAIL in the Vercel Dashboard for secure synchronization."
+            }, { status: 403 });
+        }
+
         const { spawn } = require("child_process");
         const gitCommit = () => new Promise((resolve, reject) => {
             const child = spawn("git", [
-                "-c", "user.name=ClawArmy",
-                "-c", "user.email=rikinshah787@gmail.com",
+                "-c", `user.name=${gitName || "ClawArmy"}`,
+                "-c", `user.email=${gitEmail}`,
                 "commit", "-m", commitMsg
             ]);
             child.on("close", (code: number | null) => code === 0 || code === 1 ? resolve(null) : reject(new Error("Git commit failed")));

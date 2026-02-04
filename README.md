@@ -1,6 +1,6 @@
 # 🦀 ClawArmy: The AI Specialist Command Center
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://clawarmy-pi.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://clawarmy.vercel.app)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-Antigravity-red?style=for-the-badge)](https://github.com/vudovn/antigravity)
 
 **ClawArmy** is a premium, tactical "Mission Control" platform for designing, deploying, and synchronizing AI Agent Specialists (Antigravity Skills). Built for the next generation of agentic workflows, it allows you to compose elite agent squads and inject them directly into your development environment with zero friction.
