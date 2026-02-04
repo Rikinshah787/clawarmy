@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         // 2. Git Commit
         const commitMsg = message || `Deploying new agents via ClawArmy Command Center [${new Date().toISOString()}]`;
         // Use localized config to avoid identity errors
-        await execPromise(`git -c user.name="ClawArmy" -c user.email="noreply@github.com" commit -m "${commitMsg}"`);
+        await execPromise(`git -c user.name="ClawArmy" -c user.email="rikinshah787@gmail.com" commit -m "${commitMsg}"`);
 
         // 3. Git Push
         // We push to 'consolidated' which is the new ClawArmy-code repo
