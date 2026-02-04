@@ -187,12 +187,11 @@ pause`;
       return;
     }
 
-    const keywords = input.toLowerCase();
+    const words = input.toLowerCase().split(/\s+/).filter(w => w.length > 2);
     const matches = marketplaceData.filter(agent => {
-      const agentText = `${agent.name} ${agent.persona} ${agent.tags.join(' ')}`.toLowerCase();
-      return agent.tags.some(tag => keywords.includes(tag)) ||
-        keywords.includes(agent.category) ||
-        agent.name.toLowerCase().split(' ').some(word => keywords.includes(word));
+      const agentText = `${agent.name} ${agent.persona} ${agent.category} ${agent.tags.join(' ')}`.toLowerCase();
+      // Match if any significant word from input exists in agent data
+      return words.some(word => agentText.includes(word));
     });
 
     setSuggestedAgents(matches.slice(0, 3).map(a => a.id));
@@ -481,8 +480,12 @@ goto loop`;
                 {personaInput.trim() && <div className="absolute inset-0 border border-white/20 rounded-xl z-20"></div>}
               </button>
             </div>
-            {personaInput && suggestedAgents.length === 0 && (
-              <p className="text-xs text-neutral-500">No matches found. Try: security, testing, performance, design...</p>
+            {personaInput && (
+              <p className={`text-[10px] tech-font tracking-widest animate-pulse ${suggestedAgents.length > 0 ? "text-red-400" : "text-blue-400"}`}>
+                {suggestedAgents.length > 0
+                  ? `>> INTEL_SYNC: Found ${suggestedAgents.length} marketplace matches to enhance your squad.`
+                  : ">> CUSTOM_INTEL: No direct matches. Generating unique specialist from mission data."}
+              </p>
             )}
           </div>
         </div>
