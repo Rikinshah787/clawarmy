@@ -203,16 +203,16 @@ pause`;
 
     const selectedMarketplaceAgents = marketplaceData.filter(a => suggestedAgents.includes(a.id));
 
-    // Mix and match from suggested agents
-    const mixedPersona = selectedMarketplaceAgents.map(a => a.persona).join(' ');
-    const mixedInstructions = selectedMarketplaceAgents.map(a => a.instructions).join(' ');
+    // Structured mission briefing
+    const mixedPersona = `STRATEGIC MISSION: ${selectedMarketplaceAgents.map(a => a.persona).join(' | ')}`;
+    const mixedInstructions = `OPERATIONAL PARAMETERS:\n${selectedMarketplaceAgents.map(a => `[${a.name}] ${a.instructions}`).join('\n')}`;
     const mixedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))];
 
     setConfig({
       name: personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent",
-      persona: mixedPersona.slice(0, 200) + '...',
+      persona: mixedPersona.slice(0, 250) + (mixedPersona.length > 250 ? '...' : ''),
       instructions: mixedInstructions,
-      capabilities: mixedCapabilities.slice(0, 5)
+      capabilities: mixedCapabilities.slice(0, 6)
     });
   };
 
@@ -354,7 +354,10 @@ pause`;
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Editor Side */}
           <div className="glass p-8 rounded-3xl flex flex-col gap-6 glow">
-            <h2 className="text-2xl font-semibold mb-2 text-white">Agent Architect</h2>
+            <h2 className="text-2xl font-bold mb-2 text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              COMMAND CENTER
+            </h2>
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-neutral-400">Agent Name</label>
@@ -535,20 +538,26 @@ pause`;
                       </div>
 
                       <div className="flex justify-between items-start gap-2 mt-6">
-                        <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors uppercase tracking-tight">{agent.name}</h3>
-                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap ${agent.priority === 'mvp' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
-                          agent.priority === 'quality' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                            'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold tracking-widest uppercase text-neutral-500 mb-1 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                            Active Mission
+                          </span>
+                          <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors uppercase tracking-tight">{agent.name}</h3>
+                        </div>
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-extrabold uppercase whitespace-nowrap border ${agent.priority === 'mvp' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                          agent.priority === 'quality' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                           }`}>
-                          {agent.priority}
+                          {agent.priority === 'quality' ? 'Elite' : agent.priority === 'business' ? 'Special Ops' : 'Recon'}
                         </span>
                       </div>
 
-                      <p className="text-neutral-400 text-sm flex-grow line-clamp-3 leading-relaxed">{agent.persona}</p>
+                      <p className="text-neutral-400 text-sm flex-grow line-clamp-3 leading-relaxed font-serif italic">"{agent.persona}"</p>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {agent.capabilities.map(c => (
-                          <span key={c} className="text-[10px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                          <span key={c} className="text-[9px] text-neutral-500 bg-white/5 px-2 py-1 rounded border border-white/5 uppercase font-black tracking-widest">
                             {c}
                           </span>
                         ))}
