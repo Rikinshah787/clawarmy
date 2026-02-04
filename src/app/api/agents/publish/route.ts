@@ -39,6 +39,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Mission Data Incomplete" }, { status: 400 });
         }
 
+        // 🛡️ SECURITY_SHIELD: Simulation Mode if Supabase is offline
+        if (!supabase) {
+            console.warn(">> SIMULATION_MODE_ACTIVE: Mission intel logged but not persisted (Missing Keys).");
+            return NextResponse.json({
+                success: true,
+                simulated: true,
+                message: "SIMULATION_MODE: Intel received but not persisted to Global HQ. Add Supabase keys to enable live deployment."
+            });
+        }
+
         // 1. Check if an agent with this designation already exists
         const { data: existingAgent, error: fetchError } = await supabase
             .from('marketplace')
@@ -48,14 +58,7 @@ export async function POST(req: NextRequest) {
 
         if (fetchError && fetchError.code !== 'PGRST116') {
             console.error("Transmission Error:", fetchError);
-            // If Supabase isn't configured, we fallback to a simulated success to prevent UI lockers
-            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-                return NextResponse.json({
-                    success: true,
-                    simulated: true,
-                    message: "SIMULATION_MODE: (Keys missing) Intel logged to console but not persisted."
-                });
-            }
+            return NextResponse.json({ error: "HQ_LINK_STABILITY_FAILURE: Failed to verify mission designation." }, { status: 500 });
         }
 
         let finalAgent;
