@@ -1,0 +1,605 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import JSZip from "jszip";
+import marketplaceData from "@/data/marketplace.json";
+
+interface AgentConfig {
+  name: string;
+  persona: string;
+  instructions: string;
+  capabilities: string[];
+}
+
+export default function Home() {
+  const [config, setConfig] = useState<AgentConfig>({
+    name: "CodeNinja",
+    persona: "A highly efficient, slightly sarcastic expert in TypeScript and System Architecture.",
+    instructions: "Always suggest refactorings. Use emojis sparingly. Be direct and concise.",
+    capabilities: ["Debugging", "Architecture Design", "Automated Testing"],
+  });
+
+  const [priority, setPriority] = useState<"mvp" | "quality" | "business">("quality");
+
+  const [mounted, setMounted] = useState(false);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
+  const [visitorId, setVisitorId] = useState<string>("");
+
+  useEffect(() => {
+    setMounted(true);
+
+    // Generate or retrieve unique visitor ID
+    let uid = localStorage.getItem('agentarmy_uid');
+    if (!uid) {
+      uid = 'av_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('agentarmy_uid', uid);
+    }
+    setVisitorId(uid);
+
+    // Increment visit count (stored locally for demo, would use API in production)
+    const visits = JSON.parse(localStorage.getItem('agentarmy_visits') || '{}');
+    const uniqueVisitors = Object.keys(visits).length;
+    if (!visits[uid]) {
+      visits[uid] = { firstVisit: Date.now(), lastVisit: Date.now(), count: 1 };
+    } else {
+      visits[uid].lastVisit = Date.now();
+      visits[uid].count++;
+    }
+    localStorage.setItem('agentarmy_visits', JSON.stringify(visits));
+    setVisitorCount(Object.keys(visits).length);
+  }, []);
+
+  const generateMarkdown = (overrideConfig?: AgentConfig, overridePriority?: string) => {
+    const targetConfig = overrideConfig || config;
+    const targetPriority = (overridePriority || priority) as "mvp" | "quality" | "business";
+
+    const priorityInstructions = {
+      mvp: "### MVP Priority\nFocus on speed and functionality. Prefer quick wins over architectural perfection. Suggest shortcuts where appropriate.",
+      quality: "### Perfect Quality Priority\nFocus on architectural excellence, type safety, and testability. No shortcuts allowed. Prefer long-term maintainability.",
+      business: "### Business Value Priority\nFocus on features that drive user engagement or revenue. Balance technical debt with delivery speed. Always ask 'Does this help the user?'",
+    };
+
+    return `---
+name: ${targetConfig.name}
+description: ${targetConfig.persona}
+---
+# Instructions
+${targetConfig.instructions}
+
+${priorityInstructions[targetPriority]}
+
+# Capabilities
+${targetConfig.capabilities.map((c) => `- ${c}`).join("\n")}
+
+# Metadata
+- Created via PersonaAgent Platform
+- Type: Antigravity Skill
+- Priority Profile: ${targetPriority.toUpperCase()}
+`;
+  };
+
+  const handleExport = async () => {
+    const content = generateMarkdown();
+    const zip = new JSZip();
+
+    // Add SKILL.md
+    zip.file("SKILL.md", content);
+
+    // Add install.bat for Windows
+    const installBat = `@echo off
+echo ==========================================
+echo PersonaAgent: One-Click Installer
+echo ==========================================
+set AGENT_NAME=${config.name.replace(/\s+/g, "-")}
+set TARGET_DIR=.gemini/skills/%AGENT_NAME%
+
+echo Installing %AGENT_NAME% to %TARGET_DIR%...
+
+if not exist ".gemini" mkdir .gemini
+if not exist ".gemini/skills" mkdir .gemini/skills
+if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
+
+copy /y SKILL.md "%TARGET_DIR%\\SKILL.md"
+
+echo.
+echo [SUCCESS] Agent %AGENT_NAME% installed!
+echo You can now use it in Antigravity.
+echo.
+pause`;
+
+    zip.file("install.bat", installBat);
+
+    // Generate ZIP
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${config.name.replace(/\s+/g, "-")}-kit.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const [personaInput, setPersonaInput] = useState("");
+  const [suggestedAgents, setSuggestedAgents] = useState<string[]>([]);
+
+  const analyzePersona = (input: string) => {
+    if (!input.trim()) {
+      setSuggestedAgents([]);
+      return;
+    }
+
+    const keywords = input.toLowerCase();
+    const matches = marketplaceData.filter(agent => {
+      const agentText = `${agent.name} ${agent.persona} ${agent.tags.join(' ')}`.toLowerCase();
+      return agent.tags.some(tag => keywords.includes(tag)) ||
+        keywords.includes(agent.category) ||
+        agent.name.toLowerCase().split(' ').some(word => keywords.includes(word));
+    });
+
+    setSuggestedAgents(matches.slice(0, 3).map(a => a.id));
+  };
+
+  const composeFromMarketplace = () => {
+    if (suggestedAgents.length === 0) return;
+
+    const selectedMarketplaceAgents = marketplaceData.filter(a => suggestedAgents.includes(a.id));
+
+    // Mix and match from suggested agents
+    const mixedPersona = selectedMarketplaceAgents.map(a => a.persona).join(' ');
+    const mixedInstructions = selectedMarketplaceAgents.map(a => a.instructions).join(' ');
+    const mixedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))];
+
+    setConfig({
+      name: personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent",
+      persona: mixedPersona.slice(0, 200) + '...',
+      instructions: mixedInstructions,
+      capabilities: mixedCapabilities.slice(0, 5)
+    });
+  };
+
+  const [installStatus, setInstallStatus] = useState<{ type: "success" | "error" | "loading"; msg: string } | null>(null);
+  const [view, setView] = useState<"architect" | "marketplace">("architect");
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const AGENTS_PER_PAGE = 9;
+
+  const handleDirectInstall = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
+    const targetConfig = overrideConfig || config;
+    const targetPriority = overridePriority || priority;
+
+    setInstallStatus({ type: "loading", msg: `Installing ${targetConfig.name}...` });
+    try {
+      const response = await fetch("/api/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: targetConfig.name,
+          content: generateMarkdown(targetConfig, targetPriority),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setInstallStatus({ type: "success", msg: data.message });
+        setTimeout(() => setInstallStatus(null), 5000);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      setInstallStatus({ type: "error", msg: error.message || "Failed to install" });
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (selectedAgents.length === 0) return;
+
+    setInstallStatus({ type: "loading", msg: `Installing ${selectedAgents.length} agents...` });
+
+    try {
+      const agents = marketplaceData.filter(a => selectedAgents.includes(a.id));
+      let successCount = 0;
+
+      for (const agent of agents) {
+        const response = await fetch("/api/install", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: agent.name,
+            content: generateMarkdown(agent as any, agent.priority),
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) successCount++;
+      }
+
+      setInstallStatus({
+        type: "success",
+        msg: `✅ Successfully installed ${successCount}/${selectedAgents.length} agents!`
+      });
+      setSelectedAgents([]);
+      setTimeout(() => setInstallStatus(null), 5000);
+    } catch (error: any) {
+      setInstallStatus({ type: "error", msg: error.message || "Failed to install agents" });
+    }
+  };
+
+  const toggleAgentSelection = (agentId: string) => {
+    setSelectedAgents(prev =>
+      prev.includes(agentId)
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
+
+  if (!mounted) return null;
+
+  return (
+    <main className="min-h-screen p-8 md:p-16 flex flex-col gap-12 max-w-7xl mx-auto">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-5xl font-bold tracking-tight flex items-center gap-3">
+            <span className="text-6xl">🦀</span>
+            Agent<span className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Army</span>
+          </h1>
+          <p className="text-neutral-400 text-lg">
+            Deploy your AI agent squad. One click. Mission complete.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setView("architect")}
+              className={`px-6 py-2 rounded-xl border text-sm font-semibold transition-all ${view === 'architect' ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+            >
+              Architect
+            </button>
+            <button
+              onClick={() => setView("marketplace")}
+              className={`px-6 py-2 rounded-xl border text-sm font-semibold transition-all ${view === 'marketplace' ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+            >
+              Marketplace
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type: 'security', 'ninja', 'fast coder'..."
+                value={personaInput}
+                onChange={(e) => { setPersonaInput(e.target.value); analyzePersona(e.target.value); }}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              />
+              <button
+                onClick={composeFromMarketplace}
+                disabled={suggestedAgents.length === 0}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 flex items-center gap-2 ${suggestedAgents.length > 0
+                  ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400 text-white'
+                  : 'bg-white/5 border border-white/10 text-neutral-500 cursor-not-allowed'
+                  }`}
+              >
+                <span>🎨</span>
+                {suggestedAgents.length > 0 ? `Compose (${suggestedAgents.length})` : 'Compose'}
+              </button>
+            </div>
+            {personaInput && suggestedAgents.length === 0 && (
+              <p className="text-xs text-neutral-500">No matches found. Try: security, testing, performance, design...</p>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {view === "architect" ? (
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Editor Side */}
+          <div className="glass p-8 rounded-3xl flex flex-col gap-6 glow">
+            <h2 className="text-2xl font-semibold mb-2 text-white">Agent Architect</h2>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Agent Name</label>
+              <input
+                type="text"
+                value={config.name}
+                onChange={(e) => setConfig({ ...config, name: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
+                placeholder="e.g. CodeNinja"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Core Persona</label>
+              <textarea
+                rows={3}
+                value={config.persona}
+                onChange={(e) => setConfig({ ...config, persona: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
+                placeholder="Describe how the agent behaves..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Instructions</label>
+              <textarea
+                rows={5}
+                value={config.instructions}
+                onChange={(e) => setConfig({ ...config, instructions: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"
+                placeholder="Specific guidelines for the agent..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-400">Strategic Priority</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "mvp", label: "MVP", color: "from-orange-500/20 to-orange-500/10 border-orange-500/30 text-orange-400" },
+                  { id: "quality", label: "Quality", color: "from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-400" },
+                  { id: "business", label: "Business", color: "from-emerald-500/20 to-emerald-500/10 border-emerald-500/30 text-emerald-400" }
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPriority(p.id as any)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${priority === p.id
+                      ? `bg-gradient-to-tr ${p.color} ring-2 ring-white/10`
+                      : "bg-white/5 border-white/10 text-neutral-500 hover:bg-white/10"
+                      }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleDirectInstall()}
+              className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-2xl shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow"
+            >
+              <span>✨ Install to Workspace</span>
+              <span className="text-[10px] opacity-70 font-normal uppercase tracking-widest text-emerald-100">Writes directly to ./agents/</span>
+            </button>
+
+            <button
+              onClick={handleExport}
+              className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1"
+            >
+              <span>Download Toolkit</span>
+              <span className="text-[10px] opacity-70 font-normal uppercase tracking-widest">ZIP (For other projects)</span>
+            </button>
+
+            {installStatus && (
+              <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${installStatus.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                installStatus.type === "error" ? "bg-red-500/10 border-red-500/20 text-red-400" :
+                  "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                }`}>
+                {installStatus.msg}
+              </div>
+            )}
+          </div>
+
+          {/* Preview Side */}
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center px-2">
+              <h2 className="text-2xl font-semibold text-white">SKILL.md Preview</h2>
+              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-full border border-blue-500/20 uppercase tracking-widest">
+                Live
+              </span>
+            </div>
+
+            <div className="glass p-8 rounded-3xl min-h-[500px] border-indigo-500/20 shadow-2xl">
+              <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
+                {generateMarkdown()}
+              </pre>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-3xl font-bold text-white">Agent Marketplace</h2>
+                {selectedAgents.length > 0 && (
+                  <span className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded-full text-sm font-bold">
+                    {selectedAgents.length} selected
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                placeholder="Search agents by name, description, or tags..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="bg-white/5 border border-white/10 rounded-xl px-6 py-3 w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-white transition-all"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              {["all", "security", "design", "performance", "backend", "testing", "devops", "database", "mobile", "seo", "reliability", "refactoring", "documentation"].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${selectedCategory === cat
+                    ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
+                    : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
+                    }`}
+                >
+                  {cat === "all" ? "All Agents" : cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {(() => {
+            // Filter logic
+            const filtered = marketplaceData.filter(a => {
+              const matchesSearch =
+                a.name.toLowerCase().includes(search.toLowerCase()) ||
+                a.persona.toLowerCase().includes(search.toLowerCase()) ||
+                a.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
+              const matchesCategory = selectedCategory === "all" || a.category === selectedCategory;
+              return matchesSearch && matchesCategory;
+            });
+
+            // Pagination logic
+            const totalPages = Math.ceil(filtered.length / AGENTS_PER_PAGE);
+            const startIndex = (currentPage - 1) * AGENTS_PER_PAGE;
+            const paginatedAgents = filtered.slice(startIndex, startIndex + AGENTS_PER_PAGE);
+
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedAgents.length > 0 ? paginatedAgents.map(agent => (
+                    <div
+                      key={agent.id}
+                      onClick={() => toggleAgentSelection(agent.id)}
+                      className={`glass p-6 rounded-3xl flex flex-col gap-4 transition-all group relative overflow-hidden h-full cursor-pointer ${selectedAgents.includes(agent.id)
+                        ? 'border-2 border-red-500/50 bg-red-500/5'
+                        : 'hover:border-red-500/30'
+                        }`}
+                    >
+                      {/* Checkbox */}
+                      <div className="absolute top-4 left-4 z-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedAgents.includes(agent.id)}
+                          onChange={() => toggleAgentSelection(agent.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 checked:bg-red-500 checked:border-red-500 cursor-pointer transition-all"
+                        />
+                      </div>
+
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <span className="text-6xl text-red-400">🤖</span>
+                      </div>
+
+                      <div className="flex justify-between items-start gap-2 mt-6">
+                        <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors uppercase tracking-tight">{agent.name}</h3>
+                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap ${agent.priority === 'mvp' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                          agent.priority === 'quality' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          }`}>
+                          {agent.priority}
+                        </span>
+                      </div>
+
+                      <p className="text-neutral-400 text-sm flex-grow line-clamp-3 leading-relaxed">{agent.persona}</p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {agent.capabilities.map(c => (
+                          <span key={c} className="text-[10px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
+                        className="mt-2 w-full bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg hover:shadow-red-500/20"
+                      >
+                        Import to Workspace
+                      </button>
+                    </div>
+                  )) : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-neutral-500">
+                      <span className="text-6xl mb-4">🔍</span>
+                      <p className="text-lg">No agents found matching your criteria</p>
+                      <p className="text-sm">Try adjusting your search or category filter</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-xl font-semibold transition-all ${currentPage === page
+                            ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
+                            : 'bg-white/5 border border-white/10 text-neutral-400 hover:bg-white/10'
+                            }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+
+                {/* Results Count */}
+                <div className="text-center text-neutral-500 text-sm">
+                  Showing {paginatedAgents.length} of {filtered.length} agents
+                  {selectedCategory !== "all" && ` in ${selectedCategory}`}
+                </div>
+              </>
+            );
+          })()}
+
+          {/* Bulk Import Button */}
+          {selectedAgents.length > 0 && (
+            <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-4">
+              <button
+                onClick={handleBulkImport}
+                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl ring-2 ring-white/20 active:scale-95 transition-all flex items-center gap-3"
+              >
+                <span className="text-2xl">🚀</span>
+                <div className="flex flex-col items-start">
+                  <span>Import {selectedAgents.length} Agents</span>
+                  <span className="text-xs opacity-80">Install all selected to workspace</span>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {installStatus && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-xl border bg-red-500/10 border-red-500/20 text-red-400 shadow-2xl glass min-w-[300px] text-center backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 ring-1 ring-white/10">
+              {installStatus.msg}
+            </div>
+          )}
+        </section>
+      )}
+
+      <footer className="mt-auto py-8 border-t border-white/5 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-4">
+          <p className="text-neutral-500 text-sm">
+            Built for the Antigravity Ecosystem &bull; AgentArmy v2.0
+          </p>
+          {visitorCount > 0 && (
+            <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full text-xs font-bold flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              {visitorCount} unique visitor{visitorCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        {visitorId && (
+          <p className="text-neutral-600 text-[10px] font-mono">
+            Your ID: {visitorId}
+          </p>
+        )}
+      </footer>
+    </main>
+  );
+}
