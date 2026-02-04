@@ -7,7 +7,7 @@
   --color-accent-vibrant: #6366f1;
   --color-glass: rgba(255, 255, 255, 0.05);
   --color-glass-border: rgba(255, 255, 255, 0.1);
-  
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
@@ -43,6 +43,7 @@ body {
 /* Gradient text */
 .text-gradient {
   background: linear-gradient(135deg, #60a5fa, #c084fc);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -52,7 +53,85 @@ body {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
-/* Transitions */
-* {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Command Center Utilities */
+.tactical-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.3;
+}
+
+.targeting-reticle {
+  position: relative;
+}
+
+.targeting-reticle::before,
+.targeting-reticle::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: rgba(239, 68, 68, 0.5);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.targeting-reticle-tl::before {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.targeting-reticle-tr::after {
+  top: 0;
+  right: 0;
+  border-width: 2px 2px 0 0;
+}
+
+.targeting-reticle-bl::before {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 2px 2px;
+}
+
+.targeting-reticle-br::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+.led-active {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+}
+
+.tech-font {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* Red Army Gradient */
+.text-army-gradient {
+  background: linear-gradient(to right, #ef4444, #f97316, #eab308);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
