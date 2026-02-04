@@ -199,27 +199,39 @@ pause`;
   };
 
   const composeFromMarketplace = () => {
-    if (suggestedAgents.length === 0) return;
+    if (!personaInput.trim()) return;
 
     const selectedMarketplaceAgents = marketplaceData.filter(a => suggestedAgents.includes(a.id));
 
-    // Structured mission briefing
-    const mixedPersona = `STRATEGIC MISSION: ${selectedMarketplaceAgents.map(a => a.persona).join(' | ')}`;
-    const mixedInstructions = `OPERATIONAL PARAMETERS:\n${selectedMarketplaceAgents.map(a => `[${a.name}] ${a.instructions}`).join('\n')}`;
-    const mixedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))];
+    if (selectedMarketplaceAgents.length > 0) {
+      // Intelligence Mix: Use marketplace traits
+      const mixedPersona = `STRATEGIC MISSION: ${selectedMarketplaceAgents.map(a => a.persona).join(' | ')}`;
+      const mixedInstructions = `OPERATIONAL PARAMETERS:\n${selectedMarketplaceAgents.map(a => `[${a.name}] ${a.instructions}`).join('\n')}`;
+      const mixedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))];
 
-    setConfig({
-      name: personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent",
-      persona: mixedPersona.slice(0, 250) + (mixedPersona.length > 250 ? '...' : ''),
-      instructions: mixedInstructions,
-      capabilities: mixedCapabilities.slice(0, 6)
-    });
+      setConfig({
+        name: personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent",
+        persona: mixedPersona.slice(0, 250) + (mixedPersona.length > 250 ? '...' : ''),
+        instructions: mixedInstructions,
+        capabilities: mixedCapabilities.slice(0, 6)
+      });
+      setInstallStatus({ type: "success", msg: "🎯 INTELLIGENCE_COMPOSED: Agent blueprint updated from marketplace match." });
+    } else {
+      // Custom Blueprint: Just use the user's input
+      const customName = personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent";
+      setConfig({
+        ...config,
+        name: customName,
+        persona: `CUSTOM_STRIKE_FORCE: ${personaInput}`,
+        instructions: `MISSION_OBJECTIVE: Act as a specialist focused on ${personaInput}. Ensure high-precision output and tactical efficiency.`
+      });
+      setInstallStatus({ type: "success", msg: "🛠️ CUSTOM_BLUEPRINT_CREATED: Initialized agent based on your raw input." });
+    }
 
     // UX FLOW: Switch to architect view to show results and clear input
     setView("architect");
     setPersonaInput("");
     setSuggestedAgents([]);
-    setInstallStatus({ type: "success", msg: "🎯 INTELLIGENCE_COMPOSED: Agent blueprint updated from marketplace match." });
     setTimeout(() => setInstallStatus(null), 5000);
   };
 
@@ -453,20 +465,20 @@ goto loop`;
               />
               <button
                 onClick={composeFromMarketplace}
-                disabled={suggestedAgents.length === 0}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 flex items-center gap-2 tech-font uppercase tracking-widest relative overflow-hidden group ${suggestedAgents.length > 0
+                disabled={!personaInput.trim()}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 flex items-center gap-2 tech-font uppercase tracking-widest relative overflow-hidden group ${personaInput.trim()
                   ? 'text-white'
                   : 'bg-white/5 border border-white/10 text-neutral-500 cursor-not-allowed'
                   }`}
               >
-                {suggestedAgents.length > 0 && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-600 to-red-600 bg-[length:200%_100%] animate-flow-gradient z-0 opacity-100 transition-opacity"></div>
+                {personaInput.trim() && (
+                  <div className={`absolute inset-0 bg-gradient-to-r ${suggestedAgents.length > 0 ? "from-red-600 via-pink-600 to-red-600" : "from-blue-600 via-cyan-600 to-blue-600"} bg-[length:200%_100%] animate-flow-gradient z-0 opacity-100 transition-opacity`}></div>
                 )}
                 <span className="relative z-10 flex items-center gap-2">
-                  <span>✨</span>
-                  {suggestedAgents.length > 0 ? `COMPOSE_MISSION (${suggestedAgents.length})` : 'Awaiting_Intel'}
+                  <span>{suggestedAgents.length > 0 ? "✨" : "🛠️"}</span>
+                  {!personaInput.trim() ? "Awaiting_Intel" : suggestedAgents.length > 0 ? `COMPOSE_INTELLIGENCE (${suggestedAgents.length})` : "GENERATE_CUSTOM_BLUEPRINT"}
                 </span>
-                {suggestedAgents.length > 0 && <div className="absolute inset-0 border border-white/20 rounded-xl z-20"></div>}
+                {personaInput.trim() && <div className="absolute inset-0 border border-white/20 rounded-xl z-20"></div>}
               </button>
             </div>
             {personaInput && suggestedAgents.length === 0 && (
