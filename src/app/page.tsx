@@ -135,8 +135,10 @@ ${targetConfig.capabilities.map((c) => `- "${c.toLowerCase()}"`).join("\n")}
 `;
   };
 
-  const handleExport = async () => {
-    const content = generateMarkdown();
+  const handleExport = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
+    const targetConfig = overrideConfig || config;
+    const targetPriority = overridePriority || priority;
+    const content = generateMarkdown(targetConfig, targetPriority);
     const zip = new JSZip();
 
     // Add SKILL.md
@@ -147,7 +149,7 @@ ${targetConfig.capabilities.map((c) => `- "${c.toLowerCase()}"`).join("\n")}
 echo ==========================================
 echo ClawArmy: One-Click Agent Installer
 echo ==========================================
-set AGENT_NAME=${config.name.replace(/\s+/g, "-")}
+set AGENT_NAME=${targetConfig.name.replace(/\s+/g, "-")}
 set TARGET_DIR=.gemini/skills/%AGENT_NAME%
 
 echo Installing %AGENT_NAME% to %TARGET_DIR%...
@@ -156,7 +158,7 @@ if not exist ".gemini" mkdir .gemini
 if not exist ".gemini/skills" mkdir .gemini/skills
 if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 
-copy /y SKILL.md "%TARGET_DIR%\\SKILL.md"
+copy /y SKILL.md "%TARGET_DIR%\\\\SKILL.md"
 
 echo.
 echo [SUCCESS] Agent %AGENT_NAME% installed!
@@ -171,7 +173,7 @@ pause`;
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${config.name.replace(/\s+/g, "-")}-kit.zip`;
+    link.download = `${targetConfig.name.replace(/\s+/g, "-")}-kit.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -359,8 +361,16 @@ pause`;
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen p-8 md:p-16 flex flex-col gap-12 max-w-7xl mx-auto tactical-grid scanlines relative">
+    <main className="min-h-screen p-8 md:p-16 flex flex-col gap-12 max-w-7xl mx-auto tactical-grid scanlines relative overflow-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-20 tactical-grid"></div>
+      <div className="radar-sweep"></div>
+      <div className="data-stream"></div>
+
+      {/* Dynamic Tactical Background Elements */}
+      <div className="floating-tactical-data top-10 left-10">LAT: 34.0522 N</div>
+      <div className="floating-tactical-data top-20 left-10">LONG: 118.2437 W</div>
+      <div className="floating-tactical-data bottom-10 right-10">MISSION_STATUS: ACTIVE</div>
+      <div className="floating-tactical-data bottom-20 right-10">ENCRYPTION: AES-256</div>
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-4 glass rounded-2xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
         <div className="flex flex-col gap-2">
@@ -564,23 +574,41 @@ goto loop`;
               </div>
             </div>
 
-            <button
-              onClick={() => handleMissionDeploy()}
-              className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
-            >
-              <span className="tracking-tighter">{isLocal ? "⚡ EXECUTE_DIRECT_INSTALL" : "🛰️ DOWNLOAD_MISSION_BAT"}</span>
-              <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
-                {isLocal ? "Target: ./agents/ (Connected)" : "Run in project root to deploy"}
-              </span>
-            </button>
-
-            <button
-              onClick={handleExport}
-              className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 tech-font"
-            >
-              <span className="tracking-tighter uppercase">Download_Tactical_Kit</span>
-              <span className="text-[9px] opacity-70 font-normal uppercase tracking-[0.2em]">Format: .ZIP (Portable)</span>
-            </button>
+            {isLocal ? (
+              <button
+                onClick={() => handleMissionDeploy()}
+                className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+              >
+                <span className="tracking-tighter">⚡ EXECUTE_DIRECT_PLUG_IN</span>
+                <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
+                  Target: ./agents/ (Auto-Sync to Local IDE)
+                </span>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3 mt-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 led-active animate-pulse"></span>
+                  <span className="text-[10px] tech-font text-emerald-400 font-bold tracking-widest">TACTICAL_EXPORT_CENTER</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleMissionDeploy()}
+                    className="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+                  >
+                    <span className="text-xl">🛰️</span>
+                    <span className="text-[10px] tracking-tighter">DOWNLOAD_BAT</span>
+                  </button>
+                  <button
+                    onClick={() => handleExport()}
+                    className="bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+                  >
+                    <span className="text-xl">📦</span>
+                    <span className="text-[10px] tracking-tighter">DOWNLOAD_ZIP</span>
+                  </button>
+                </div>
+                <p className="text-[9px] text-neutral-500 font-medium text-center italic">Run the .BAT in your project root or unzip into .gemini/skills/</p>
+              </div>
+            )}
 
             {installStatus && (
               <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${installStatus.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
@@ -720,12 +748,34 @@ goto loop`;
                       </div>
 
                       <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleMissionDeploy(agent as any, agent.priority); }}
-                          className="flex-1 bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg tech-font text-[10px]"
-                        >
-                          {isLocal ? 'Direct Install' : 'Download BAT'}
-                        </button>
+                        {isLocal ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleMissionDeploy(agent as any, agent.priority); }}
+                            className="flex-1 bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg tech-font text-[10px] uppercase tracking-tighter"
+                          >
+                            Execute_Mission
+                          </button>
+                        ) : (
+                          <div className="flex flex-1 gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleMissionDeploy(agent as any, agent.priority); }}
+                              className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 tech-font text-[9px] uppercase tracking-tighter"
+                              title="Download Mission BAT"
+                            >
+                              BAT
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExport(agent as any, agent.priority);
+                              }}
+                              className="flex-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 tech-font text-[9px] uppercase tracking-tighter"
+                              title="Download Tactical ZIP"
+                            >
+                              ZIP
+                            </button>
+                          </div>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
