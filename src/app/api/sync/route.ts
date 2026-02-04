@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
         await execPromise(`git -c user.name="ClawArmy" -c user.email="rikinshah787@gmail.com" commit -m "${commitMsg}"`);
 
         // 3. Git Push
-        // We push to 'consolidated' which is the new ClawArmy-code repo
-        const { stdout, stderr } = await execPromise("git push consolidated main");
+        // We push to 'origin' which is the new ClawArmy repo
+        const { stdout, stderr } = await execPromise("git push origin main");
 
         console.log("Sync stdout:", stdout);
         if (stderr) console.error("Sync stderr:", stderr);
