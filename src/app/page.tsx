@@ -594,12 +594,28 @@ pause`;
                         ))}
                       </div>
 
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
-                        className="mt-2 w-full bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg hover:shadow-red-500/20"
-                      >
-                        Import to Workspace
-                      </button>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
+                          className="flex-1 bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg tech-font text-[10px]"
+                        >
+                          Local Install
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Generate a universal PowerShell one-liner that fetches the agent script from this server
+                            const cmd = `powershell -Command "iwr -useb http://${window.location.host}/api/install?get=${agent.id} | iex"`;
+                            navigator.clipboard.writeText(cmd);
+                            setInstallStatus({ type: "success", msg: "Magic Mission Link Copied! Send this to your friend." });
+                            setTimeout(() => setInstallStatus(null), 4000);
+                          }}
+                          className="px-4 bg-white/5 border border-white/10 text-neutral-400 hover:text-white hover:border-white/30 rounded-xl transition-all active:scale-95 flex items-center justify-center group"
+                          title="Copy Magic Install Link for Friends"
+                        >
+                          <span className="opacity-50 group-hover:opacity-100">🔗</span>
+                        </button>
+                      </div>
                     </div>
                   )) : (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 text-neutral-500">
