@@ -12,30 +12,44 @@ export async function POST(req: NextRequest) {
 
         // Define the base agents directory in the project root
         const rootDir = process.cwd();
-        const slug = name.replace(/\s+/g, "-").toLowerCase();
+
+        // SECURE: Strict slugification and path validation
+        const safeSlug = name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
         // 1. Install Agent Skill
         const agentsDir = path.join(rootDir, "agents");
-        const agentFolder = path.join(agentsDir, slug);
+        const agentFolder = path.resolve(agentsDir, safeSlug);
+
+        // SECURITY CHECK: Ensure it's still inside agentsDir
+        if (!agentFolder.startsWith(agentsDir)) {
+            return NextResponse.json({ error: "Invalid path target" }, { status: 403 });
+        }
+
         await fs.mkdir(agentFolder, { recursive: true });
         await fs.writeFile(path.join(agentFolder, "SKILL.md"), content, "utf8");
 
         // 2. Install Slash Command Workflow
         const workflowsDir = path.join(rootDir, ".agent", "workflows");
+        const workflowFile = path.resolve(workflowsDir, `${safeSlug}.md`);
+
+        // SECURITY CHECK: Ensure it's still inside workflowsDir
+        if (!workflowFile.startsWith(workflowsDir)) {
+            return NextResponse.json({ error: "Invalid workflow path" }, { status: 403 });
+        }
         await fs.mkdir(workflowsDir, { recursive: true });
 
         const workflowContent = `---
 description: Activates the ${name} specialist
 ---
-1. Read the instructions in \`agents/${slug}/SKILL.md\`.
+1. Read the instructions in \`agents/${safeSlug}/SKILL.md\`.
 2. Adopt the persona and wait for user input.
 `;
-        await fs.writeFile(path.join(workflowsDir, `${slug}.md`), workflowContent, "utf8");
+        await fs.writeFile(workflowFile, workflowContent, "utf8");
 
         return NextResponse.json({
             success: true,
             path: agentFolder,
-            message: `Agent ${name} installed! Use /${slug} in chat to activate.`
+            message: `Agent ${name} installed! Use /${safeSlug} in chat to activate.`
         });
     } catch (error) {
         console.error("Installation error:", error);
@@ -56,18 +70,18 @@ export async function GET(req: NextRequest) {
         fullScript += `if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }\n`;
 
         marketplace.forEach((agent: any) => {
-            const slug = agent.name.replace(/\s+/g, "-").toLowerCase();
+            const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
             fullScript += `
 echo "Deploying Agent: ${agent.name}..."
-if (!(Test-Path "agents/${slug}")) { New-Item -ItemType Directory -Force -Path "agents/${slug}" }
-$c_${slug} = @"
+if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" }
+$c_${slugName} = @"
 ---
 name: ${agent.name}
 description: ${agent.persona}
 ---
 ${agent.instructions}
 "@
-$c_${slug} | Out-File -FilePath "agents/${slug}/SKILL.md" -Encoding utf8
+$c_${slugName} | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
 `;
         });
 
@@ -83,13 +97,13 @@ $c_${slug} | Out-File -FilePath "agents/${slug}/SKILL.md" -Encoding utf8
     const agent = marketplace.find((a: any) => a.id === agentId);
     if (!agent) return new NextResponse("Agent not found", { status: 404 });
 
-    const slug = agent.name.replace(/\s+/g, "-").toLowerCase();
+    const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
     // Return a powershell script that installs the agent
     const script = `
 echo "Initializing ClawArmy Deployment: ${agent.name}..."
 if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }
-if (!(Test-Path "agents/${slug}")) { New-Item -ItemType Directory -Force -Path "agents/${slug}" }
+if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" }
 $content = @"
 ---
 name: ${agent.name}
@@ -97,7 +111,7 @@ description: ${agent.persona}
 ---
 ${agent.instructions}
 "@
-$content | Out-File -FilePath "agents/${slug}/SKILL.md" -Encoding utf8
+$content | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
 echo "[SUCCESS] ${agent.name} is now operational in your workspace."
 `;
 
