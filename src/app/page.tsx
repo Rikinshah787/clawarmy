@@ -220,11 +220,17 @@ pause`;
   };
 
   const publishToMarketplace = async () => {
+    const key = prompt(">> IDENTITY_VERIFICATION: Enter COMMANDER_KEY to authorize mission:");
+    if (!key) return;
+
     setInstallStatus({ type: "loading", msg: "Transmitting coordinates to Global HQ..." });
     try {
       const response = await fetch("/api/agents/publish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-commander-key": key
+        },
         body: JSON.stringify({
           ...config,
           priority,

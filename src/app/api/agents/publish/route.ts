@@ -20,6 +20,18 @@ import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
     try {
+        // 🛡️ COMMANDER_SHIELD_CHECK
+        // Only the Commander can authorize global mission deployments
+        const authHeader = req.headers.get("x-commander-key");
+        const commanderKey = process.env.COMMANDER_KEY;
+
+        if (commanderKey && authHeader !== commanderKey) {
+            console.warn(">> UNAUTHORIZED_PUBLISH_ATTEMPT: Access Denied.");
+            return NextResponse.json({
+                error: "UNAUTHORIZED_SOLDIER: Access Denied. Commander clearance required."
+            }, { status: 403 });
+        }
+
         const agentData = await req.json();
         const { name, persona, instructions, capabilities, priority } = agentData;
 
