@@ -223,6 +223,37 @@ pause`;
     setTimeout(() => setInstallStatus(null), 5000);
   };
 
+  const [isLocal, setIsLocal] = useState(false);
+  useEffect(() => {
+    setIsLocal(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  }, []);
+
+  const downloadMissionBat = (targetConfig: AgentConfig, targetPriority: string) => {
+    const mdContent = generateMarkdown(targetConfig, targetPriority);
+    const agentSlug = targetConfig.name.replace(/\s+/g, "-");
+
+    // Create a self-extracting PowerShell one-liner in a BAT file
+    const batContent = `@echo off
+TITLE ClawArmy Deployment: ${targetConfig.name}
+echo [DEPLOY] Initiating mission deployment for ${targetConfig.name}...
+echo.
+powershell -Command "$content = @'\n${mdContent.replace(/'/g, "''")}\n'@; $path = 'agents/${agentSlug}'; if (!(Test-Path $path)) { New-Item -ItemType Directory -Path $path -Force }; Set-Content -Path \\"$path/SKILL.md\\" -Value $content -Encoding UTF8"
+echo [SUCCESS] Mission deployed to ./agents/${agentSlug}/SKILL.md
+echo.
+pause`;
+
+    const blob = new Blob([batContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `deploy-${agentSlug}.bat`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    setInstallStatus({ type: "success", msg: "🛰️ Mission BAT Downloaded! Run it in your project root to deploy the agent." });
+    setTimeout(() => setInstallStatus(null), 8000);
+  };
+
   const [installStatus, setInstallStatus] = useState<{ type: "success" | "error" | "loading"; msg: string } | null>(null);
   const [view, setView] = useState<"architect" | "marketplace">("architect");
   const [search, setSearch] = useState("");
@@ -231,11 +262,16 @@ pause`;
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const AGENTS_PER_PAGE = 9;
 
-  const handleDirectInstall = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
+  const handleMissionDeploy = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
     const targetConfig = overrideConfig || config;
     const targetPriority = overridePriority || priority;
 
-    setInstallStatus({ type: "loading", msg: `Installing ${targetConfig.name}...` });
+    if (!isLocal) {
+      downloadMissionBat(targetConfig, targetPriority);
+      return;
+    }
+
+    setInstallStatus({ type: "loading", msg: `Executing mission install for ${targetConfig.name}...` });
     try {
       const response = await fetch("/api/install", {
         method: "POST",
@@ -248,13 +284,13 @@ pause`;
 
       const data = await response.json();
       if (data.success) {
-        setInstallStatus({ type: "success", msg: data.message });
+        setInstallStatus({ type: "success", msg: "✅ Mission Deployed Locally! Check your agents/ folder." });
         setTimeout(() => setInstallStatus(null), 5000);
       } else {
         throw new Error(data.error);
       }
     } catch (error: any) {
-      setInstallStatus({ type: "error", msg: error.message || "Failed to install" });
+      setInstallStatus({ type: "error", msg: "❌ Direct Installation failed. Download the Tactical Kit instead." });
     }
   };
 
@@ -505,11 +541,13 @@ goto loop`;
             </div>
 
             <button
-              onClick={() => handleDirectInstall()}
+              onClick={() => handleMissionDeploy()}
               className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
             >
-              <span className="tracking-tighter">⚡ EXECUTE_INSTALLATION</span>
-              <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">Target: ./agents/ (Auto-Sync)</span>
+              <span className="tracking-tighter">{isLocal ? "⚡ EXECUTE_DIRECT_INSTALL" : "🛰️ DOWNLOAD_MISSION_BAT"}</span>
+              <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
+                {isLocal ? "Target: ./agents/ (Connected)" : "Run in project root to deploy"}
+              </span>
             </button>
 
             <button
@@ -659,10 +697,10 @@ goto loop`;
 
                       <div className="flex gap-2 mt-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDirectInstall(agent as any, agent.priority); }}
+                          onClick={(e) => { e.stopPropagation(); handleMissionDeploy(agent as any, agent.priority); }}
                           className="flex-1 bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg tech-font text-[10px]"
                         >
-                          Local Install
+                          {isLocal ? 'Direct Install' : 'Download BAT'}
                         </button>
                         <button
                           onClick={(e) => {
