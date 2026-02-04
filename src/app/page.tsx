@@ -203,20 +203,30 @@ pause`;
     const selectedMarketplaceAgents = marketplaceData.filter(a => suggestedAgents.includes(a.id));
 
     if (selectedMarketplaceAgents.length > 0) {
-      // Intelligence Mix: Use marketplace traits
-      const mixedPersona = `STRATEGIC MISSION: ${selectedMarketplaceAgents.map(a => a.persona).join(' | ')}`;
-      const mixedInstructions = `OPERATIONAL PARAMETERS:\n${selectedMarketplaceAgents.map(a => `[${a.name}] ${a.instructions}`).join('\n')}`;
-      const mixedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))];
+      // 🧬 PERMUTATION & COMBINATION SYNTHESIS
+      // We merge the essence of ALL matched agents into one master blueprint
+      const syntheticName = selectedMarketplaceAgents.length > 1
+        ? selectedMarketplaceAgents.map(a => a.name.split(' ')[0]).join('')
+        : personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+
+      const combinedPersona = `ULTRA_SYNTHETIC_PERSONA: A hybrid of ${selectedMarketplaceAgents.map(a => a.name).join(' + ')}. ${selectedMarketplaceAgents.map(a => a.persona).join(' ')}`;
+
+      // COMBINATION: Interleave instructions for cross-functional mastery
+      const combinedInstructions = `[SYNTHESIZED_OPERATIONAL_PROTOCOLS]\n` +
+        selectedMarketplaceAgents.map(a => `### ${a.name}_MODULE:\n${a.instructions}`).join('\n\n');
+
+      // PERMUTATION: Unique set of all matched capabilities
+      const combinedCapabilities = [...new Set(selectedMarketplaceAgents.flatMap(a => a.capabilities))].slice(0, 10);
 
       setConfig({
-        name: personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent",
-        persona: mixedPersona.slice(0, 250) + (mixedPersona.length > 250 ? '...' : ''),
-        instructions: mixedInstructions,
-        capabilities: mixedCapabilities.slice(0, 6)
+        name: syntheticName.slice(0, 20),
+        persona: combinedPersona.slice(0, 500),
+        instructions: combinedInstructions,
+        capabilities: combinedCapabilities
       });
-      setInstallStatus({ type: "success", msg: "🎯 INTELLIGENCE_COMPOSED: Agent blueprint updated from marketplace match." });
+      setInstallStatus({ type: "success", msg: `🧬 SYNTHESIS_COMPLETE: Created ${syntheticName} using ${selectedMarketplaceAgents.length}-way combination logic.` });
     } else {
-      // Custom Blueprint: Just use the user's input
+      // Custom Blueprint fallback...
       const customName = personaInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || "CustomAgent";
       setConfig({
         ...config,
@@ -227,7 +237,6 @@ pause`;
       setInstallStatus({ type: "success", msg: "🛠️ CUSTOM_BLUEPRINT_CREATED: Initialized agent based on your raw input." });
     }
 
-    // UX FLOW: Switch to architect view to show results and clear input
     setView("architect");
     setPersonaInput("");
     setSuggestedAgents([]);
