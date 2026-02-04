@@ -579,16 +579,16 @@ goto loop`;
                 onClick={() => handleMissionDeploy()}
                 className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
               >
-                <span className="tracking-tighter">⚡ EXECUTE_DIRECT_PLUG_IN</span>
+                <span className="tracking-tighter uppercase">⚡ ONE-CLICK INSTALLER</span>
                 <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
-                  Target: ./agents/ (Auto-Sync to Local IDE)
+                  Direct Target: /agents/ (Internal_Plug-in)
                 </span>
               </button>
             ) : (
               <div className="flex flex-col gap-3 mt-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 led-active animate-pulse"></span>
-                  <span className="text-[10px] tech-font text-emerald-400 font-bold tracking-widest">TACTICAL_EXPORT_CENTER</span>
+                  <span className="text-[10px] tech-font text-emerald-400 font-bold tracking-widest uppercase">TACTICAL_ONE-CLICK_INSTALLER</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -596,17 +596,16 @@ goto loop`;
                     className="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
                   >
                     <span className="text-xl">🛰️</span>
-                    <span className="text-[10px] tracking-tighter">DOWNLOAD_BAT</span>
+                    <span className="text-[10px] tracking-tighter uppercase">DOWNLOAD_BAT</span>
                   </button>
                   <button
                     onClick={() => handleExport()}
                     className="bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
                   >
                     <span className="text-xl">📦</span>
-                    <span className="text-[10px] tracking-tighter">DOWNLOAD_ZIP</span>
+                    <span className="text-[10px] tracking-tighter uppercase">EXPORT_ZIP</span>
                   </button>
                 </div>
-                <p className="text-[9px] text-neutral-500 font-medium text-center italic">Run the .BAT in your project root or unzip into .gemini/skills/</p>
               </div>
             )}
 
@@ -753,7 +752,7 @@ goto loop`;
                             onClick={(e) => { e.stopPropagation(); handleMissionDeploy(agent as any, agent.priority); }}
                             className="flex-1 bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg tech-font text-[10px] uppercase tracking-tighter"
                           >
-                            Execute_Mission
+                            ⚡ ONE-CLICK_INSTALL
                           </button>
                         ) : (
                           <div className="flex flex-1 gap-1">
@@ -762,7 +761,7 @@ goto loop`;
                               className="flex-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 tech-font text-[9px] uppercase tracking-tighter"
                               title="Download Mission BAT"
                             >
-                              BAT
+                              BAT_INSTALLER
                             </button>
                             <button
                               onClick={(e) => {
@@ -772,7 +771,7 @@ goto loop`;
                               className="flex-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 tech-font text-[9px] uppercase tracking-tighter"
                               title="Download Tactical ZIP"
                             >
-                              ZIP
+                              ZIP_EXPORT
                             </button>
                           </div>
                         )}
