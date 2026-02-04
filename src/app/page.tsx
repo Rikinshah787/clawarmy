@@ -214,6 +214,13 @@ pause`;
       instructions: mixedInstructions,
       capabilities: mixedCapabilities.slice(0, 6)
     });
+
+    // UX FLOW: Switch to architect view to show results and clear input
+    setView("architect");
+    setPersonaInput("");
+    setSuggestedAgents([]);
+    setInstallStatus({ type: "success", msg: "🎯 INTELLIGENCE_COMPOSED: Agent blueprint updated from marketplace match." });
+    setTimeout(() => setInstallStatus(null), 5000);
   };
 
   const [installStatus, setInstallStatus] = useState<{ type: "success" | "error" | "loading"; msg: string } | null>(null);
@@ -411,13 +418,19 @@ goto loop`;
               <button
                 onClick={composeFromMarketplace}
                 disabled={suggestedAgents.length === 0}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 flex items-center gap-2 ${suggestedAgents.length > 0
-                  ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400 text-white'
+                className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 flex items-center gap-2 tech-font uppercase tracking-widest relative overflow-hidden group ${suggestedAgents.length > 0
+                  ? 'text-white'
                   : 'bg-white/5 border border-white/10 text-neutral-500 cursor-not-allowed'
                   }`}
               >
-                <span>🎨</span>
-                {suggestedAgents.length > 0 ? `Compose (${suggestedAgents.length})` : 'Compose'}
+                {suggestedAgents.length > 0 && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-600 to-red-600 bg-[length:200%_100%] animate-flow-gradient z-0 opacity-100 transition-opacity"></div>
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <span>✨</span>
+                  {suggestedAgents.length > 0 ? `COMPOSE_MISSION (${suggestedAgents.length})` : 'Awaiting_Intel'}
+                </span>
+                {suggestedAgents.length > 0 && <div className="absolute inset-0 border border-white/20 rounded-xl z-20"></div>}
               </button>
             </div>
             {personaInput && suggestedAgents.length === 0 && (
