@@ -208,8 +208,47 @@ body {
   position: fixed;
   font-family: var(--font-mono);
   font-size: 8px;
-  color: rgba(239, 68, 68, 0.2);
+  color: rgba(239, 68, 68, 0.4);
   pointer-events: none;
   z-index: -1;
   text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 4px;
+  border-left: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+    text-shadow: 0 0 0 transparent;
+  }
+
+  20% {
+    transform: translate(-2px, 2px);
+    text-shadow: 1px 0 #ff007b, -1px 0 #00e5ff;
+  }
+
+  40% {
+    transform: translate(-2px, -2px);
+    text-shadow: 1px 0 #ff007b, -1px 0 #00e5ff;
+  }
+
+  60% {
+    transform: translate(2px, 2px);
+    text-shadow: 1px 0 #ff007b, -1px 0 #00e5ff;
+  }
+
+  80% {
+    transform: translate(2px, -2px);
+    text-shadow: 1px 0 #ff007b, -1px 0 #00e5ff;
+  }
+
+  100% {
+    transform: translate(0);
+    text-shadow: 0 0 0 transparent;
+  }
 }

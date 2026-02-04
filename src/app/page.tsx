@@ -190,6 +190,60 @@ pause`;
     URL.revokeObjectURL(url);
   };
 
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      // Simple parsing for SKILL.md metadata
+      const nameMatch = content.match(/^name:\s*(.*)$/m);
+      const personaMatch = content.match(/^description:\s*(.*)$/m);
+      const instructionsMatch = content.match(/##\s+(?:Instructions|STRATEGIC_OBJECTIVES)\s*([\s\S]*?)(?=##|$)/i);
+
+      if (nameMatch || personaMatch) {
+        setConfig({
+          name: nameMatch?.[1]?.trim() || "Imported Specialist",
+          persona: personaMatch?.[1]?.trim() || "A specialist imported from a mission file.",
+          instructions: instructionsMatch?.[1]?.trim() || "Mission parameters extracted from file.",
+          capabilities: ["Imported_Unit"]
+        });
+        setInstallStatus({ type: "success", msg: "📡 INTEL_DECRYPTED: Agent parameters successfully imported." });
+        setTimeout(() => setInstallStatus(null), 4000);
+      } else {
+        setInstallStatus({ type: "error", msg: "❌ DATA_CORRUPTION: Not a recognized ClawArmy mission file." });
+        setTimeout(() => setInstallStatus(null), 4000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const publishToMarketplace = async () => {
+    setInstallStatus({ type: "loading", msg: "Transmitting coordinates to Global HQ..." });
+    try {
+      const response = await fetch("/api/agents/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...config,
+          priority,
+          markdown: generateMarkdown()
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setInstallStatus({ type: "success", msg: `⚔️ GLOBAL_DEPLOYMENT_ACTIVE: ${data.message}` });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      setInstallStatus({ type: "error", msg: `❌ TRANSMISSION_FAILURE: ${error.message || "Link unstable."}` });
+    }
+    setTimeout(() => setInstallStatus(null), 6000);
+  };
+
   const [personaInput, setPersonaInput] = useState("");
   const [suggestedAgents, setSuggestedAgents] = useState<string[]>([]);
 
@@ -309,9 +363,14 @@ pause`;
   const handleMissionDeploy = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
     const targetConfig = overrideConfig || config;
     const targetPriority = overridePriority || priority;
+    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase();
 
     if (!isLocal) {
-      downloadMissionBat(targetConfig, targetPriority);
+      // Magic One-Click for Web: Copy PowerShell Command
+      const cmd = `powershell -Command "iwr -useb https://${window.location.host}/api/install?get=${slug} | iex"`;
+      navigator.clipboard.writeText(cmd);
+      setInstallStatus({ type: "success", msg: "⚡ MAGIC_COMMAND_COPIED: Paste in your project root to auto-deploy mission." });
+      setTimeout(() => setInstallStatus(null), 6000);
       return;
     }
 
@@ -328,13 +387,14 @@ pause`;
 
       const data = await response.json();
       if (data.success) {
-        setInstallStatus({ type: "success", msg: "✅ Mission Deployed Locally! Check your agents/ folder." });
+        setInstallStatus({ type: "success", msg: `✅ MISSION_DEPLOYED: Specialist ${targetConfig.name} is now operational in your /agents/ folder.` });
         setTimeout(() => setInstallStatus(null), 5000);
       } else {
         throw new Error(data.error);
       }
     } catch (error: any) {
-      setInstallStatus({ type: "error", msg: "❌ Direct Installation failed. Download the Tactical Kit instead." });
+      setInstallStatus({ type: "error", msg: "❌ DIRECT_COMM_FAILURE: Attempting secondary Tactical Kit export..." });
+      setTimeout(() => handleExport(targetConfig, targetPriority), 2000);
     }
   };
 
@@ -465,10 +525,16 @@ pause`;
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
           {/* Editor Side */}
           <div className="glass p-8 rounded-3xl flex flex-col gap-6 glow targeting-reticle targeting-reticle-tl targeting-reticle-tr opacity-95 hover:opacity-100 transition-opacity">
-            <h2 className="text-2xl font-bold mb-2 text-white flex items-center gap-2 tech-font tracking-tighter">
-              <span className="w-2 h-2 rounded-full bg-red-500 led-active animate-pulse"></span>
-              COMMAND CENTER
-            </h2>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2 tech-font tracking-tighter">
+                <span className="w-2 h-2 rounded-full bg-red-500 led-active animate-pulse"></span>
+                COMMAND CENTER
+              </h2>
+              <label className="cursor-pointer bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg text-[10px] tech-font text-neutral-400 hover:text-white transition-all flex items-center gap-2">
+                <span>📂</span> IMPORT_INTEL
+                <input type="file" className="hidden" accept=".md,.txt" onChange={handleImportFile} />
+              </label>
+            </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold text-neutral-500 tech-font uppercase tracking-widest">Agent_Designation</label>
@@ -525,40 +591,52 @@ pause`;
               </div>
             </div>
 
-            {isLocal ? (
-              <button
-                onClick={() => handleMissionDeploy()}
-                className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
-              >
-                <span className="tracking-tighter uppercase">⚡ ONE-CLICK INSTALLER</span>
-                <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
-                  Direct Target: /agents/ (Internal_Plug-in)
-                </span>
-              </button>
-            ) : (
-              <div className="flex flex-col gap-3 mt-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 led-active animate-pulse"></span>
-                  <span className="text-[10px] tech-font text-emerald-400 font-bold tracking-widest uppercase">TACTICAL_ONE-CLICK_INSTALLER</span>
+            <button
+              onClick={() => handleMissionDeploy()}
+              className="mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-5 rounded-2xl shadow-xl ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font relative group overflow-hidden glitch-hover"
+            >
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className="text-lg tracking-tighter uppercase flex items-center gap-2">
+                <span className="led-active bg-white w-1.5 h-1.5 rounded-full animate-pulse"></span>
+                ONE-CLICK INSTALL
+              </span>
+              <span className="text-[9px] opacity-80 font-normal uppercase tracking-[0.2em] text-red-100">
+                {isLocal ? "Target: /agents/ (Internal_Injection)" : "Auto-Copy Magic PowerShell Link"}
+              </span>
+            </button>
+
+            {!isLocal && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  <span className="text-[10px] tech-font text-blue-400 font-bold tracking-widest uppercase opacity-70">Secondary_Export_Modules</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleMissionDeploy()}
-                    className="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+                    onClick={() => downloadMissionBat(config, priority)}
+                    className="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 font-bold py-3 rounded-xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 tech-font"
                   >
-                    <span className="text-xl">🛰️</span>
                     <span className="text-[10px] tracking-tighter uppercase">DOWNLOAD_BAT</span>
                   </button>
                   <button
                     onClick={() => handleExport()}
-                    className="bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font"
+                    className="bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 font-bold py-3 rounded-xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 tech-font"
                   >
-                    <span className="text-xl">📦</span>
                     <span className="text-[10px] tracking-tighter uppercase">EXPORT_ZIP</span>
                   </button>
                 </div>
               </div>
             )}
+
+            <button
+              onClick={publishToMarketplace}
+              className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font mt-2 border-dashed"
+            >
+              <span className="tracking-tighter uppercase flex items-center gap-2">
+                <span>⚔️</span> PUBLISH_TO_GLOBAL_ARMY
+              </span>
+              <span className="text-[9px] opacity-60 font-normal uppercase tracking-[0.2em]">Deploy mission profile to marketplace</span>
+            </button>
 
             {installStatus && (
               <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${installStatus.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
