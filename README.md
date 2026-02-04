@@ -1,4 +1,4 @@
-# AgentArmy  
+# ClawArmy  
   
 Deploy your AI agent squad. One click. Mission complete.  
   

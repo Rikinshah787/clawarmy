@@ -12,12 +12,12 @@ export async function POST(req: NextRequest) {
         await execPromise("git add .");
 
         // 2. Git Commit
-        const commitMsg = message || `Deploying new agents via AgentArmy Command Center [${new Date().toISOString()}]`;
+        const commitMsg = message || `Deploying new agents via ClawArmy Command Center [${new Date().toISOString()}]`;
         // Use localized config to avoid identity errors
-        await execPromise(`git -c user.name="AgentArmy" -c user.email="contact@agentarmy.io" commit -m "${commitMsg}"`);
+        await execPromise(`git -c user.name="ClawArmy" -c user.email="contact@agentarmy.io" commit -m "${commitMsg}"`);
 
         // 3. Git Push
-        // We push to 'consolidated' which is the new AgentArmy-code repo
+        // We push to 'consolidated' which is the new ClawArmy-code repo
         const { stdout, stderr } = await execPromise("git push consolidated main");
 
         console.log("Sync stdout:", stdout);
