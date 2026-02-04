@@ -299,15 +299,15 @@ pause`;
     <main className="min-h-screen p-8 md:p-16 flex flex-col gap-12 max-w-7xl mx-auto tactical-grid scanlines relative">
       <div className="fixed inset-0 pointer-events-none opacity-20 tactical-grid"></div>
 
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-8 glass rounded-3xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between relative p-6 glass rounded-2xl targeting-reticle targeting-reticle-tl targeting-reticle-tr targeting-reticle-bl targeting-reticle-br">
         <div className="flex flex-col gap-2">
           <h1 className="text-5xl font-bold tracking-tight flex items-center gap-3">
             <img
               src="/mascot.png"
               alt="AgentArmy"
-              className="w-56 h-56 -rotate-3 hover:rotate-0 transition-all duration-700 drop-shadow-[0_0_30px_rgba(255,0,0,0.3)] filter brightness-110"
+              className="w-35 h-35 -rotate-3 hover:rotate-0 transition-all duration-700 drop-shadow-[0_0_20px_rgba(255,0,0,0.2)] filter brightness-110"
             />
-            <span className="tech-font">Agent</span><span className="tech-font bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">Army</span>
+            <span className="tech-font">Agent</span><span className="tech-font bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent text-4xl">Army</span>
           </h1>
           <p className="text-neutral-400 text-sm tech-font tracking-widest opacity-80 uppercase">
             // Mission Status: Ready_to_Deploy
@@ -658,7 +658,7 @@ pause`;
         </section>
       )}  <footer className="mt-auto py-12 border-t border-white/5 flex flex-col items-center gap-8 relative p-8 glass rounded-3xl targeting-reticle targeting-reticle-bl targeting-reticle-br">
         <div className="flex items-center gap-3">
-          <img src="/mascot.png" alt="AgentArmy" className="w-16 h-16 grayscale hover:grayscale-0 transition-all drop-shadow-lg" />
+          <img src="/mascot.png" alt="AgentArmy" className="w-12 h-12 grayscale hover:grayscale-0 transition-all drop-shadow-lg" />
           <p className="text-neutral-500 text-xs tech-font tracking-widest">
             // Built for the Antigravity_Ecosystem &bull; v2.0
           </p>
