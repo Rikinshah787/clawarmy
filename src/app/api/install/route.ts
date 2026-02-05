@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
     const agentId = searchParams.get("get");
     const syncAll = searchParams.get("sync") === "all";
 
+    // Load static marketplace
     const marketplace = require("@/data/marketplace.json");
 
     if (syncAll) {
@@ -92,12 +93,54 @@ $c_${slugName} | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
         });
     }
 
-    if (!agentId) return new NextResponse("Target missing", { status: 400 });
+    if (!agentId) return new NextResponse("Target missing. Usage: ?get=agent-name", { status: 400 });
 
-    const agent = marketplace.find((a: any) => a.id === agentId);
-    if (!agent) return new NextResponse("Agent not found", { status: 404 });
+    // Search in static marketplace by id, name, or slug
+    const searchTerm = agentId.toLowerCase();
+    let agent = marketplace.find((a: any) =>
+        a.id === searchTerm ||
+        a.name.toLowerCase() === searchTerm ||
+        a.name.replace(/[^a-z0-9]/gi, "-").toLowerCase() === searchTerm
+    );
+
+    // If not found in static, check database for approved agents
+    if (!agent) {
+        try {
+            const { getSupabase } = await import("@/lib/supabase");
+            const supabase = getSupabase();
+
+            if (supabase) {
+                const { data: dbAgent } = await supabase
+                    .from('agents')
+                    .select('*')
+                    .eq('status', 'approved')
+                    .or(`slug.eq.${searchTerm},name.ilike.${searchTerm}`)
+                    .single();
+
+                if (dbAgent) {
+                    agent = {
+                        id: dbAgent.slug,
+                        name: dbAgent.name,
+                        persona: dbAgent.persona,
+                        instructions: dbAgent.instructions,
+                        capabilities: dbAgent.capabilities
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn("DB lookup failed, continuing with static only");
+        }
+    }
+
+    if (!agent) {
+        return new NextResponse(`Agent "${agentId}" not found. Check available agents at clawarmy.vercel.app`, { status: 404 });
+    }
 
     const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+
+    // Escape special characters for PowerShell
+    const safePersona = (agent.persona || "").replace(/"/g, '`"').replace(/\$/g, '`$');
+    const safeInstructions = (agent.instructions || "").replace(/"/g, '`"').replace(/\$/g, '`$');
 
     // Return a powershell script that installs the agent
     const script = `
@@ -107,9 +150,9 @@ if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Pa
 $content = @"
 ---
 name: ${agent.name}
-description: ${agent.persona}
+description: ${safePersona}
 ---
-${agent.instructions}
+${safeInstructions}
 "@
 $content | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
 echo "[SUCCESS] ${agent.name} is now operational in your workspace."
