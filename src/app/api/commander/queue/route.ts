@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
     try {
@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
             }, { status: 403 });
         }
 
-        // Check if Supabase is configured
+        // Get Supabase client on-demand
+        const supabase = getSupabase();
+
         if (!supabase) {
             return NextResponse.json({
                 agents: [],

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid status" }, { status: 400 });
         }
 
-        // Check if Supabase is configured
+        // Get Supabase client on-demand
+        const supabase = getSupabase();
+
         if (!supabase) {
             return NextResponse.json({
                 success: true,

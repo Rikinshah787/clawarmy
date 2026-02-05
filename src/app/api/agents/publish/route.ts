@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 /**
  * 🛰️ AGENT_SUBMISSION_PROTOCOL
@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
         // Generate URL-safe slug
         const slug = name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-        // 🛡️ SECURITY_SHIELD: Simulation Mode if Supabase is offline
+        // 🛡️ Get Supabase client on-demand
+        const supabase = getSupabase();
+
         if (!supabase) {
             console.warn(">> SIMULATION_MODE_ACTIVE: Submission logged but not persisted.");
             return NextResponse.json({
