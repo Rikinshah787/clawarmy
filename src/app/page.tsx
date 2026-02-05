@@ -523,6 +523,65 @@ Write-Host "Use /${slug} in Antigravity to activate." -ForegroundColor Yellow
     );
   };
 
+  const handleBulkDownloadZip = async () => {
+    if (selectedAgents.length === 0) return;
+
+    setInstallStatus({ type: "loading", msg: `Packaging ${selectedAgents.length} agents into tactical kit...` });
+
+    try {
+      const zip = new JSZip();
+      const agents = marketplaceData.filter(a => selectedAgents.includes(a.id));
+
+      for (const agent of agents) {
+        const slug = agent.name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
+        const markdown = generateMarkdown(agent as any, agent.priority);
+
+        // Add agent skill file
+        zip.file(`agents/${slug}/SKILL.md`, markdown);
+
+        // Add workflow file
+        const workflowContent = `---
+description: Activates the ${agent.name} specialist
+---
+1. Read the instructions in \`agents/${slug}/SKILL.md\`.
+2. Adopt the persona and wait for user input.
+`;
+        zip.file(`.agent/workflows/${slug}.md`, workflowContent);
+      }
+
+      // Add a combined install script
+      const installScript = `@echo off
+echo === ClawArmy Bulk Deployment: ${agents.length} agents ===
+echo.
+echo Agents in this package:
+${agents.map(a => `echo   - ${a.name}`).join('\n')}
+echo.
+echo Files have been extracted. Use the slash commands in Antigravity to activate.
+pause`;
+      zip.file("README-INSTALL.bat", installScript);
+
+      // Generate and download
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `clawarmy-${selectedAgents.length}-agents-kit.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setInstallStatus({
+        type: "success",
+        msg: `📦 Downloaded ${selectedAgents.length} agents as tactical kit!`
+      });
+      setTimeout(() => setInstallStatus(null), 5000);
+    } catch (error: any) {
+      setInstallStatus({ type: "error", msg: error.message || "Failed to create ZIP" });
+      setTimeout(() => setInstallStatus(null), 5000);
+    }
+  };
+
   if (!mounted) return null;
 
   return (
@@ -959,7 +1018,17 @@ Write-Host "Use /${slug} in Antigravity to activate." -ForegroundColor Yellow
 
           {/* Bulk Import Button */}
           {selectedAgents.length > 0 && (
-            <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-4">
+            <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-4 flex gap-3">
+              <button
+                onClick={handleBulkDownloadZip}
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold px-6 py-4 rounded-2xl shadow-2xl ring-2 ring-white/20 active:scale-95 transition-all flex items-center gap-3"
+              >
+                <span className="text-2xl">📦</span>
+                <div className="flex flex-col items-start">
+                  <span>Download ZIP</span>
+                  <span className="text-xs opacity-80">{selectedAgents.length} agents</span>
+                </div>
+              </button>
               <button
                 onClick={handleBulkImport}
                 className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl ring-2 ring-white/20 active:scale-95 transition-all flex items-center gap-3"
