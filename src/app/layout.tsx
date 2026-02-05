@@ -16,7 +16,11 @@ export const metadata: Metadata = {
   title: "ClawArmy | Tactical AI Agent Command Center",
   description: "Design, deploy, and synchronize elite AI specialists with zero friction. The Command Center for the Antigravity ecosystem.",
   icons: {
-    icon: "/mascot.png",
+    icon: [
+      { url: "/mascot.png", type: "image/png" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+    ],
+    shortcut: "/mascot.png",
     apple: "/mascot.png",
   },
 };
