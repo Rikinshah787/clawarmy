@@ -220,27 +220,30 @@ pause`;
   };
 
   const publishToMarketplace = async () => {
-    const key = prompt(">> IDENTITY_VERIFICATION: Enter COMMANDER_KEY to authorize mission:");
-    if (!key) return;
+    setInstallStatus({ type: "loading", msg: "📡 Transmitting intel to Global HQ..." });
 
-    setInstallStatus({ type: "loading", msg: "Transmitting coordinates to Global HQ..." });
+    // Get visitor ID for submission tracking
+    const submitterId = localStorage.getItem('agentarmy_uid') || 'anonymous';
+
     try {
       const response = await fetch("/api/agents/publish", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-commander-key": key
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...config,
           priority,
-          markdown: generateMarkdown()
+          submitter_id: submitterId
         })
       });
 
       const data = await response.json();
       if (data.success) {
-        setInstallStatus({ type: "success", msg: `⚔️ GLOBAL_DEPLOYMENT_ACTIVE: ${data.message}` });
+        setInstallStatus({
+          type: "success",
+          msg: data.merged
+            ? `🧬 ${data.message}`
+            : `📡 ${data.message}`
+        });
       } else {
         throw new Error(data.error);
       }
@@ -639,9 +642,9 @@ pause`;
               className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 font-bold py-4 rounded-2xl active:scale-95 transition-all cursor-pointer flex flex-col items-center gap-1 glow tech-font mt-2 border-dashed"
             >
               <span className="tracking-tighter uppercase flex items-center gap-2">
-                <span>⚔️</span> PUBLISH_TO_GLOBAL_ARMY
+                <span>📡</span> SUBMIT_TO_GLOBAL_ARMY
               </span>
-              <span className="text-[9px] opacity-60 font-normal uppercase tracking-[0.2em]">Deploy mission profile to marketplace</span>
+              <span className="text-[9px] opacity-60 font-normal uppercase tracking-[0.2em]">Your agent will be reviewed by the Commander</span>
             </button>
 
             {installStatus && (
