@@ -73,6 +73,30 @@ export default function CommanderPage() {
         setTimeout(() => setStatusMessage(null), 3000);
     };
 
+    const deleteAgent = async (agentId: string, agentName: string) => {
+        if (!confirm(`⚠️ PERMANENT DELETE: Remove "${agentName}" from the army forever?`)) {
+            return;
+        }
+
+        const storedKey = localStorage.getItem("commander_key") || key;
+        const res = await fetch("/api/commander/delete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-commander-key": storedKey
+            },
+            body: JSON.stringify({ agentId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            setStatusMessage(`🗑️ ${agentName} has been permanently removed`);
+            fetchAgents();
+        } else {
+            setStatusMessage(`❌ ${data.error}`);
+        }
+        setTimeout(() => setStatusMessage(null), 3000);
+    };
+
     useEffect(() => {
         const storedKey = localStorage.getItem("commander_key");
         if (storedKey) {
@@ -135,8 +159,8 @@ export default function CommanderPage() {
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${filter === f
-                                        ? "bg-red-500/20 border border-red-500/50 text-red-400"
-                                        : "bg-white/5 border border-white/10 text-neutral-500 hover:bg-white/10"
+                                    ? "bg-red-500/20 border border-red-500/50 text-red-400"
+                                    : "bg-white/5 border border-white/10 text-neutral-500 hover:bg-white/10"
                                     }`}
                             >
                                 {f}
@@ -170,8 +194,8 @@ export default function CommanderPage() {
                                         <p className="text-[10px] text-neutral-500 font-mono">/{agent.slug}</p>
                                     </div>
                                     <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${agent.status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
-                                            agent.status === "approved" ? "bg-emerald-500/20 text-emerald-400" :
-                                                "bg-red-500/20 text-red-400"
+                                        agent.status === "approved" ? "bg-emerald-500/20 text-emerald-400" :
+                                            "bg-red-500/20 text-red-400"
                                         }`}>
                                         {agent.status}
                                     </span>
@@ -207,6 +231,14 @@ export default function CommanderPage() {
                                         </button>
                                     </div>
                                 )}
+
+                                {/* Delete button for all agents */}
+                                <button
+                                    onClick={() => deleteAgent(agent.id, agent.name)}
+                                    className="w-full bg-neutral-800 hover:bg-red-900 text-neutral-400 hover:text-red-400 font-bold py-2 rounded-lg text-xs transition-all border border-neutral-700 hover:border-red-800"
+                                >
+                                    🗑️ DELETE PERMANENTLY
+                                </button>
                             </div>
                         ))}
                     </div>
