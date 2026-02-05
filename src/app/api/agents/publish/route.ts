@@ -42,7 +42,9 @@ export async function POST(req: NextRequest) {
         if (existing) {
             // 🧬 AUTO-MERGE: Reinforce existing agent
             const mergedInstructions = `${existing.instructions}\n\n[REINFORCEMENT_${existing.merge_count + 1}]\n${instructions}`;
-            const mergedCapabilities = Array.from(new Set([...existing.capabilities, ...capabilities])).slice(0, 15);
+            const existingCaps = existing.capabilities || [];
+            const newCaps = capabilities || [];
+            const mergedCapabilities = Array.from(new Set([...existingCaps, ...newCaps])).slice(0, 15);
 
             const { error: updateError } = await supabase
                 .from('agents')
