@@ -406,11 +406,51 @@ pause`;
   const handleMissionDeploy = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
     const targetConfig = overrideConfig || config;
     const targetPriority = overridePriority || priority;
-    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase();
+    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
 
     if (!isLocal) {
-      // Magic One-Click for Web: Copy PowerShell Command
-      const cmd = `powershell -Command "iwr -useb https://${window.location.host}/api/install?get=${slug} | iex"`;
+      // Generate INLINE PowerShell script that creates the agent directly
+      // This way custom agents work without being in the database
+      const markdown = generateMarkdown(targetConfig, targetPriority);
+      const escapedMarkdown = markdown
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '`"')
+        .replace(/\$/g, '`$')
+        .replace(/\r\n/g, '\n');
+
+      const inlineScript = `
+# ClawArmy Tactical Deployment: ${targetConfig.name}
+$agentDir = "agents/${slug}"
+$workflowDir = ".agent/workflows"
+
+Write-Host "Initializing ClawArmy Deployment: ${targetConfig.name}..." -ForegroundColor Cyan
+
+if (!(Test-Path $agentDir)) { New-Item -ItemType Directory -Force -Path $agentDir | Out-Null }
+if (!(Test-Path $workflowDir)) { New-Item -ItemType Directory -Force -Path $workflowDir | Out-Null }
+
+$skillContent = @"
+${escapedMarkdown}
+"@
+
+$workflowContent = @"
+---
+description: Activates the ${targetConfig.name} specialist
+---
+1. Read the instructions in \`agents/${slug}/SKILL.md\`.
+2. Adopt the persona and wait for user input.
+"@
+
+$skillContent | Out-File -FilePath "$agentDir/SKILL.md" -Encoding utf8
+$workflowContent | Out-File -FilePath "$workflowDir/${slug}.md" -Encoding utf8
+
+Write-Host "[SUCCESS] ${targetConfig.name} is now operational!" -ForegroundColor Green
+Write-Host "Use /${slug} in Antigravity to activate." -ForegroundColor Yellow
+`;
+
+      // Encode as base64 for clean transfer
+      const encoded = btoa(unescape(encodeURIComponent(inlineScript)));
+      const cmd = `powershell -Command "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${encoded}')) | iex"`;
+
       navigator.clipboard.writeText(cmd);
       setInstallStatus({ type: "success", msg: "⚡ MAGIC_COMMAND_COPIED: Paste in your project root to auto-deploy mission." });
       setTimeout(() => setInstallStatus(null), 6000);
