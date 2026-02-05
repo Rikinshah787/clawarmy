@@ -220,12 +220,23 @@ pause`;
   };
 
   const publishToMarketplace = async () => {
+    // Validate required fields first
+    if (!config.name?.trim() || !config.persona?.trim() || !config.instructions?.trim()) {
+      setInstallStatus({ type: "error", msg: "❌ MISSION_INCOMPLETE: Name, Persona, and Instructions are required." });
+      setTimeout(() => setInstallStatus(null), 4000);
+      return;
+    }
+
     setInstallStatus({ type: "loading", msg: "📡 Transmitting intel to Global HQ..." });
 
     // Get visitor ID for submission tracking
     const submitterId = localStorage.getItem('agentarmy_uid') || 'anonymous';
 
     try {
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch("/api/agents/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -233,22 +244,45 @@ pause`;
           ...config,
           priority,
           submitter_id: submitterId
-        })
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
+      // Handle HTTP errors
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: Server rejected the request`);
+      }
+
       const data = await response.json();
+
       if (data.success) {
         setInstallStatus({
           type: "success",
-          msg: data.merged
-            ? `🧬 ${data.message}`
-            : `📡 ${data.message}`
+          msg: data.simulated
+            ? `⚠️ ${data.message}`
+            : data.merged
+              ? `🧬 ${data.message}`
+              : `📡 ${data.message}`
         });
       } else {
-        throw new Error(data.error);
+        throw new Error(data.error || "Unknown server error");
       }
     } catch (error: any) {
-      setInstallStatus({ type: "error", msg: `❌ TRANSMISSION_FAILURE: ${error.message || "Link unstable."}` });
+      // Handle specific error types
+      let errorMsg = "Link unstable.";
+
+      if (error.name === 'AbortError') {
+        errorMsg = "Request timed out. Check your connection.";
+      } else if (error.message?.includes('fetch')) {
+        errorMsg = "Network error. Are you online?";
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
+      setInstallStatus({ type: "error", msg: `❌ TRANSMISSION_FAILURE: ${errorMsg}` });
     }
     setTimeout(() => setInstallStatus(null), 6000);
   };

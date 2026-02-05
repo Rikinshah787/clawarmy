@@ -88,7 +88,30 @@ export async function POST(req: NextRequest) {
         }
 
     } catch (error: any) {
-        console.error("SUBMISSION_ERROR:", error.message);
-        return NextResponse.json({ error: "Submission Failed: " + error.message }, { status: 500 });
+        console.error("SUBMISSION_ERROR:", error);
+
+        // Handle specific Supabase/Postgres errors
+        let errorMessage = "Submission Failed";
+        let statusCode = 500;
+
+        if (error.code === '23505') {
+            // Unique violation
+            errorMessage = "An agent with this designation already exists. Try a different name.";
+            statusCode = 409;
+        } else if (error.code === '23502') {
+            // Not null violation
+            errorMessage = "Required fields are missing.";
+            statusCode = 400;
+        } else if (error.message?.includes('JSON')) {
+            errorMessage = "Invalid data format received.";
+            statusCode = 400;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        return NextResponse.json({
+            error: errorMessage,
+            code: error.code || "UNKNOWN"
+        }, { status: statusCode });
     }
 }
