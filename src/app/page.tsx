@@ -36,17 +36,37 @@ export default function Home() {
     }
     setVisitorId(uid);
 
-    // Increment visit count (stored locally for demo, would use API in production)
+    // 🛰️ Track visitor via API
+    const trackVisitor = async () => {
+      try {
+        const response = await fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitorId: uid })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setVisitorCount(data.count || 0);
+        } else {
+          // Fallback to local count if API fails
+          const visits = JSON.parse(localStorage.getItem('agentarmy_visits') || '{}');
+          setVisitorCount(Object.keys(visits).length);
+        }
+      } catch (e) {
+        console.warn("Tracking API offline, using local fallback");
+        const visits = JSON.parse(localStorage.getItem('agentarmy_visits') || '{}');
+        setVisitorCount(Object.keys(visits).length);
+      }
+    };
+
+    trackVisitor();
+
+    // Local increment for immediate feedback
     const visits = JSON.parse(localStorage.getItem('agentarmy_visits') || '{}');
-    const uniqueVisitors = Object.keys(visits).length;
-    if (!visits[uid]) {
-      visits[uid] = { firstVisit: Date.now(), lastVisit: Date.now(), count: 1 };
-    } else {
-      visits[uid].lastVisit = Date.now();
-      visits[uid].count++;
+    if (!visits[uid!]) {
+      visits[uid!] = { firstVisit: Date.now(), lastVisit: Date.now(), count: 1 };
+      localStorage.setItem('agentarmy_visits', JSON.stringify(visits));
     }
-    localStorage.setItem('agentarmy_visits', JSON.stringify(visits));
-    setVisitorCount(Object.keys(visits).length);
   }, []);
 
   const generateMarkdown = (overrideConfig?: AgentConfig, overridePriority?: string) => {
