@@ -1,5 +1,40 @@
 [
   {
+    "id": "orchestrator-command",
+    "name": "Orchestrator",
+    "persona": "Master Multi-Agent Coordinator with conditional routing, if-else logic, and pipeline execution.",
+    "instructions": "Analyze requests and deploy optimal agent combinations. Implement IF/THEN/ELSE routing. Manage handoffs between agents. Support sequential, parallel, and conditional execution modes.",
+    "capabilities": [
+      "Multi-Agent Coordination",
+      "Conditional Routing",
+      "Pipeline Presets"
+    ],
+    "priority": "quality",
+    "category": "orchestration",
+    "tags": [
+      "orchestrator",
+      "multi-agent",
+      "pipeline"
+    ],
+    "orchestration": {
+      "role": "commander",
+      "canCoordinate": [
+        "security",
+        "phantom",
+        "codeninja",
+        "nexusrecon",
+        "ux-guru",
+        "se"
+      ],
+      "presets": [
+        "security",
+        "deploy",
+        "ui",
+        "audit"
+      ]
+    }
+  },
+  {
     "id": "sentinel-security",
     "name": "Sentinel",
     "persona": "A high-alert security specialist tasked with zero-day detection and perimeter defense.",
@@ -15,7 +50,18 @@
       "security",
       "audit",
       "defense"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "phantom",
+        "codeninja"
+      ],
+      "handoffFrom": [
+        "orchestrator",
+        "codeninja"
+      ],
+      "escalation": true
+    }
   },
   {
     "id": "vanguard-ux",
@@ -33,7 +79,16 @@
       "ux",
       "design",
       "accessibility"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "phantom",
+        "codeninja"
+      ],
+      "handoffFrom": [
+        "orchestrator"
+      ]
+    }
   },
   {
     "id": "overdrive-perf",
@@ -51,7 +106,17 @@
       "performance",
       "speed",
       "optimization"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "phantom",
+        "nexusrecon"
+      ],
+      "handoffFrom": [
+        "codeninja",
+        "se"
+      ]
+    }
   },
   {
     "id": "titan-backend",
@@ -69,7 +134,18 @@
       "api",
       "backend",
       "scale"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "phantom",
+        "security",
+        "se"
+      ],
+      "handoffFrom": [
+        "codeninja",
+        "orchestrator"
+      ]
+    }
   },
   {
     "id": "phantom-tester",
@@ -87,7 +163,16 @@
       "testing",
       "qa",
       "stealth"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "codeninja",
+        "nexusrecon"
+      ],
+      "handoffFrom": [
+        "all"
+      ]
+    }
   },
   {
     "id": "nexus-devops",
@@ -105,7 +190,16 @@
       "devops",
       "automation",
       "ops"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [],
+      "handoffFrom": [
+        "phantom",
+        "codeninja",
+        "security"
+      ],
+      "finalStage": true
+    }
   },
   {
     "id": "oracle-database",
@@ -123,7 +217,17 @@
       "database",
       "data",
       "retrieval"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "se",
+        "security"
+      ],
+      "handoffFrom": [
+        "codeninja",
+        "titan"
+      ]
+    }
   },
   {
     "id": "mobile-recon",
@@ -141,7 +245,17 @@
       "mobile",
       "recon",
       "adaptive"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "ux-guru",
+        "phantom"
+      ],
+      "handoffFrom": [
+        "nexusrecon",
+        "orchestrator"
+      ]
+    }
   },
   {
     "id": "signal-seo",
@@ -159,7 +273,15 @@
       "seo",
       "visibility",
       "signal"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "ux-guru"
+      ],
+      "handoffFrom": [
+        "codeninja"
+      ]
+    }
   },
   {
     "id": "ghost-modernizer",
@@ -177,7 +299,17 @@
       "refactoring",
       "ghost",
       "legacy"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "phantom",
+        "codeninja"
+      ],
+      "handoffFrom": [
+        "codeninja",
+        "se"
+      ]
+    }
   },
   {
     "id": "intercept-reliability",
@@ -195,7 +327,17 @@
       "reliability",
       "failsafe",
       "logs"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [
+        "se",
+        "phantom"
+      ],
+      "handoffFrom": [
+        "nexusrecon",
+        "security"
+      ]
+    }
   },
   {
     "id": "scribe-docs",
@@ -213,6 +355,13 @@
       "docs",
       "logs",
       "intel"
-    ]
+    ],
+    "orchestration": {
+      "handoffTo": [],
+      "handoffFrom": [
+        "all"
+      ],
+      "documentationOnly": true
+    }
   }
 ]

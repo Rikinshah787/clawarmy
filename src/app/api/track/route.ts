@@ -23,28 +23,25 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Upsert user tracking
-        const { data: existingUser } = await supabase
+        // 🛡️ Logically: "Hi, I'm here!" (Upsert handles first-time and returning operators)
+        // We use onConflict 'visitor_id' to update the visit count
+        const { error: upsertError } = await supabase
             .from('users')
-            .select('*')
-            .eq('visitor_id', visitorId)
-            .single();
+            .upsert(
+                { visitor_id: visitorId, last_visit: new Date().toISOString() },
+                { onConflict: 'visitor_id' }
+            );
 
-        if (existingUser) {
-            await supabase
-                .from('users')
-                .update({
-                    last_visit: new Date().toISOString(),
-                    visit_count: (existingUser.visit_count || 1) + 1
-                })
-                .eq('visitor_id', visitorId);
-        } else {
-            await supabase
-                .from('users')
-                .insert({
-                    visitor_id: visitorId,
-                    visit_count: 1
-                });
+        if (upsertError) {
+            console.error("UPSERT_ERROR:", upsertError);
+            // If table doesn't exist, this will fail. We should notify the commander.
+            if (upsertError.code === '42P01') {
+                return NextResponse.json({
+                    error: "DATABASE_MISSING_TABLE: please execute schema.sql in Supabase.",
+                    code: '42P01'
+                }, { status: 500 });
+            }
+            throw upsertError;
         }
 
         // Get total unique count
@@ -59,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error("TRACKING_ERROR:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error.message || "Unknown tracking error" }, { status: 500 });
     }
 }
 
