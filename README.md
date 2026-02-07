@@ -59,7 +59,7 @@ ClawArmy's unique **AI synthesis capability** allows:
 - **Hybrid Agent Creation**: Automatically merge multiple marketplace agents into a single specialist
 - **Intelligent Capability Fusion**: Combine instructions, capabilities, and priorities using AI
 - **Auto-Merge Protocol**: When duplicate agents are published, the system synthesizes them into an evolved, more capable unit
-- **Word-based Fuzzy Matching**: AI-powered text analysis to identify semantic similarities and merge agent capabilities intelligently
+- **Word-based Fuzzy Matching**: Text similarity analysis using token-based matching to identify semantic similarities and intelligently merge agent capabilities
 
 ### 🎯 How It Works in Practice
 
@@ -91,7 +91,7 @@ Creates new hybrid agent with unified persona and enhanced capabilities
 Once deployed to your project, these AI agents:
 - Integrate with **GitHub Copilot** and other AI coding assistants
 - Provide specialized AI personas for different development tasks
-- Enable **slash-command activation** (e.g., `/orchestrator`, `/security`)
+- Enable **slash-command activation** (e.g., `/orchestrator`, `/security`, `/codeninja`)
 - Offer **intelligent context** for AI-assisted development
 
 ### 💡 Technical AI Architecture
