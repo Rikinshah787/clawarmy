@@ -202,8 +202,36 @@ ${safeContent}
         skillContent = `---\nname: ${agent.name}\ndescription: ${agent.persona || ""}\n---\n${agent.instructions || ""}`;
     }
 
+    // Get workflow content
+    let workflowContent = "";
+    try {
+        const workflowPath = path.join(rootDir, '.agent', 'workflows', `${slugName}.md`);
+        workflowContent = await fs.readFile(workflowPath, 'utf-8');
+    } catch {
+        // Generate default workflow
+        workflowContent = `---
+description: Activates the ${agent.name} specialist
+---
+# ${agent.name} Activation
+
+1. Read the instructions in \`agents/${slugName}/SKILL.md\`.
+2. Adopt the persona and follow all protocols.
+
+## Quick Commands
+
+\`\`\`
+# Activate agent
+/${slugName} "your request"
+\`\`\``;
+    }
+
     // Escape for PowerShell
     const safeContent = skillContent
+        .replace(/\$/g, '`$')
+        .replace(/"/g, '`"')
+        .replace(/\r\n/g, '\n');
+
+    const safeWorkflow = workflowContent
         .replace(/\$/g, '`$')
         .replace(/"/g, '`"')
         .replace(/\r\n/g, '\n');
@@ -212,13 +240,21 @@ ${safeContent}
 echo "Initializing ClawArmy Deployment: ${agent.name}..."
 if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }
 if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" }
+if (!(Test-Path ".agent")) { New-Item -ItemType Directory -Force -Path ".agent" }
+if (!(Test-Path ".agent/workflows")) { New-Item -ItemType Directory -Force -Path ".agent/workflows" }
 @"
 ${safeContent}
 "@ | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
-echo "[SUCCESS] ${agent.name} installed with FULL skill file."
+echo "[SUCCESS] SKILL.md installed."
+@"
+${safeWorkflow}
+"@ | Out-File -FilePath ".agent/workflows/${slugName}.md" -Encoding utf8
+echo "[SUCCESS] Workflow installed. Use /${slugName} to activate."
+echo "[COMPLETE] ${agent.name} is now operational!"
 `;
 
     return new NextResponse(script, {
         headers: { "Content-Type": "text/plain" }
     });
 }
+
