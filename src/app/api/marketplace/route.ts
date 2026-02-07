@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import localAgents from "@/data/marketplace.json";
+import fs from "fs/promises";
+import path from "path";
 
 /**
  * 🛰️ MARKETPLACE API
@@ -8,47 +10,79 @@ import localAgents from "@/data/marketplace.json";
  */
 export async function GET() {
     try {
+        const rootDir = process.cwd();
         const supabase = getSupabase();
 
-        // Start with local agents (includes skillPath and workflows)
-        const enrichedAgents = localAgents.map(agent => ({
-            ...agent,
-            skillUrl: `/api/agents/${agent.id}/skill`,
-            workflowUrl: agent.skillPath?.includes('agents/')
-                ? `/api/agents/${agent.id}/workflow`
-                : null,
-            source: 'local'
-        }));
+        // Enrich local agents with actual skill/workflow content
+        const enrichedLocal = await Promise.all(
+            localAgents.map(async (agent: any) => {
+                let skillContent = "";
+                let workflowContent = "";
+                const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+
+                // Get skill content
+                if (agent.skillPath) {
+                    try {
+                        skillContent = await fs.readFile(path.join(rootDir, agent.skillPath), 'utf-8');
+                    } catch { }
+                }
+
+                // Get workflow content
+                try {
+                    workflowContent = await fs.readFile(path.join(rootDir, '.agent', 'workflows', `${slugName}.md`), 'utf-8');
+                } catch { }
+
+                return {
+                    ...agent,
+                    skillContent: skillContent || null,
+                    workflowContent: workflowContent || null,
+                    skillUrl: `/api/agents/${agent.id}/skill`,
+                    workflowUrl: `/api/agents/${agent.id}/workflow`,
+                    source: 'local'
+                };
+            })
+        );
+
+        let allAgents = [...enrichedLocal];
 
         if (supabase) {
             // Fetch approved agents from Supabase
             const { data: dbAgents, error } = await supabase
                 .from('agents')
-                .select('id, name, slug, persona, instructions, capabilities, priority, created_at')
+                .select('id, name, slug, persona, instructions, capabilities, priority, skill_content, workflow_content, created_at')
                 .eq('status', 'approved')
                 .order('created_at', { ascending: false });
 
             if (!error && dbAgents) {
-                // Add Supabase agents with their skill paths
                 const supabaseEnriched = dbAgents.map(agent => ({
-                    ...agent,
+                    id: agent.id,
+                    name: agent.name,
+                    slug: agent.slug,
+                    persona: agent.persona,
+                    instructions: agent.instructions,
+                    capabilities: agent.capabilities,
+                    priority: agent.priority,
+                    skillContent: agent.skill_content || null,
+                    workflowContent: agent.workflow_content || null,
                     skillUrl: `/api/agents/${agent.slug}/skill`,
-                    workflowUrl: null,
-                    source: 'supabase'
+                    workflowUrl: `/api/agents/${agent.slug}/workflow`,
+                    source: 'supabase',
+                    created_at: agent.created_at
                 }));
 
-                // Combine: local agents first, then Supabase agents
-                return NextResponse.json({
-                    agents: [...enrichedAgents, ...supabaseEnriched],
-                    total: enrichedAgents.length + supabaseEnriched.length
-                });
+                allAgents = [...enrichedLocal, ...supabaseEnriched];
             }
         }
 
-        // Return local agents only if no Supabase
         return NextResponse.json({
-            agents: enrichedAgents,
-            total: enrichedAgents.length
+            agents: allAgents,
+            total: allAgents.length,
+            structure: {
+                skillContent: "Full SKILL.md content",
+                workflowContent: "Full workflow content",
+                skillUrl: "API endpoint to fetch skill",
+                workflowUrl: "API endpoint to fetch workflow"
+            }
         });
 
     } catch (error: any) {
