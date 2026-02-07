@@ -69,7 +69,7 @@ User: "Check this repo for security issues"
 ↓
 AI analyzes request → Detects "security" keyword
 ↓
-Orchestrator deploys: Security Agent → Phantom → Code Ninja
+Orchestrator deploys: Security Sentinel → Phantom → Code Ninja
 ↓
 Each AI agent analyzes with its specialized knowledge
 ↓
