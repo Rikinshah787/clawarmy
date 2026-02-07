@@ -27,6 +27,84 @@ Contribute your best specialists to the **Global Army**. Our backend features an
 
 ---
 
+## 🤖 How This Product Uses AI
+
+ClawArmy is fundamentally an **AI Agent Orchestration Platform** that leverages artificial intelligence in multiple sophisticated ways:
+
+### 🧠 AI Agent Specialists
+Each agent in the ClawArmy ecosystem is an **AI-powered specialist** designed to perform specific tasks:
+- **Security Sentinel**: AI-driven vulnerability detection and security auditing
+- **Code Ninja**: Intelligent code analysis, refactoring, and optimization
+- **Phantom**: AI-powered test generation and quality assurance
+- **UX Vanguard**: Smart UX analysis and accessibility checking
+- **Orchestrator**: Master AI coordinator that manages multi-agent workflows
+
+These agents work within the **GitHub Copilot Workspace** and similar AI development environments, acting as specialized AI personas with distinct expertise areas.
+
+### 🔄 Intelligent Agent Orchestration
+The platform uses **AI-driven decision-making** to coordinate multiple agents:
+
+```
+User Request → AI Analysis → Agent Selection → Conditional Routing → Execution
+```
+
+The **Orchestrator Agent** employs:
+- **Conditional Logic Trees**: IF/THEN/ELSE routing based on request analysis
+- **Priority Management**: Automatic escalation for critical issues
+- **Context-Aware Handoffs**: Seamless information passing between AI agents
+- **Parallel Processing**: Simultaneous deployment of compatible agents
+
+### 🧬 Synthetic Merging Logic
+ClawArmy's unique **AI synthesis capability** allows:
+- **Hybrid Agent Creation**: Automatically merge multiple marketplace agents into a single specialist
+- **Intelligent Capability Fusion**: Combine instructions, capabilities, and priorities using AI
+- **Auto-Merge Protocol**: When duplicate agents are published, the system synthesizes them into an evolved, more capable unit
+- **Word-based Fuzzy Matching**: Text similarity analysis using token-based matching to identify semantic similarities and intelligently merge agent capabilities
+
+### 🎯 How It Works in Practice
+
+**Example 1: Security Audit Operation**
+```
+User: "Check this repo for security issues"
+↓
+AI analyzes request → Detects "security" keyword
+↓
+Orchestrator deploys: Security Sentinel → Phantom → Code Ninja
+↓
+Each AI agent analyzes with its specialized knowledge
+↓
+Results synthesized into unified action plan
+```
+
+**Example 2: Hybrid Agent Creation**
+```
+User combines 3 marketplace agents
+↓
+AI analyzes each agent's capabilities and instructions
+↓
+Synthetic Merging Logic identifies overlaps and synergies
+↓
+Creates new hybrid agent with unified persona and enhanced capabilities
+```
+
+### 🚀 AI Integration in Your Workflow
+Once deployed to your project, these AI agents:
+- Integrate with **GitHub Copilot** and other AI coding assistants
+- Provide specialized AI personas for different development tasks
+- Enable **slash-command activation** (e.g., `/orchestrator`, `/security`, `/codeninja`)
+- Offer **intelligent context** for AI-assisted development
+
+### 💡 Technical AI Architecture
+- **Natural Language Understanding**: Agents parse user requests to determine intent
+- **Semantic Analysis**: Word-based fuzzy matching for intelligent agent merging
+- **Rule-Based AI**: Conditional logic for decision trees and routing
+- **Collaborative AI**: Multi-agent systems working in coordinated workflows
+- **Context Management**: Sophisticated state passing between AI agents
+
+ClawArmy acts as a **meta-layer** for AI development tools, providing specialized, coordinated AI agents that enhance your existing AI coding environment with tactical, mission-specific intelligence.
+
+---
+
 ## ⚓ Deployment Steps for Users
 
 1.  **Access the Command Center**: Navigate to [clawarmy.vercel.app](https://clawarmy.vercel.app).
