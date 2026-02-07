@@ -683,6 +683,90 @@ pause`;
         </div>
       </header>
 
+      {/* Instructions Section for Vibe Coders */}
+      <section className="glass p-6 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <details className="group">
+          <summary className="flex items-center justify-between cursor-pointer list-none">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎯</span>
+              <div>
+                <h2 className="text-lg font-bold text-white tech-font tracking-tight">WHAT IS THIS? (Click to expand)</h2>
+                <p className="text-xs text-neutral-500 tech-font">A quick guide for vibe coders & AI enthusiasts</p>
+              </div>
+            </div>
+            <span className="text-neutral-500 group-open:rotate-180 transition-transform text-xl">▼</span>
+          </summary>
+          
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-white/10">
+            {/* What is ClawArmy */}
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+              <h3 className="text-sm font-bold text-red-400 mb-2 flex items-center gap-2">
+                <span>🤖</span> What is ClawArmy?
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                ClawArmy is an <strong className="text-white">AI Agent Marketplace</strong> for Antigravity (Google DeepMind's AI IDE). 
+                Create, customize, and deploy specialized AI personas that help you code faster and smarter.
+              </p>
+            </div>
+
+            {/* For Vibe Coders */}
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+              <h3 className="text-sm font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                <span>✨</span> For Vibe Coders
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                <strong className="text-white">Just describe what you want!</strong> Type "security ninja who tests my code" 
+                and we'll auto-generate a perfect AI agent. No config needed - pure vibes.
+              </p>
+            </div>
+
+            {/* How to Use */}
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+              <h3 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2">
+                <span>🚀</span> How to Use
+              </h3>
+              <ol className="text-xs text-neutral-400 leading-relaxed space-y-1 list-decimal list-inside">
+                <li>Pick agents from <strong className="text-white">Marketplace</strong> or create custom</li>
+                <li>Click <strong className="text-white">ONE-CLICK INSTALL</strong></li>
+                <li>Paste the magic command in your project</li>
+                <li>Use <strong className="text-white">/agentname</strong> in Antigravity!</li>
+              </ol>
+            </div>
+
+            {/* Orchestrator Feature */}
+            <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 p-4 rounded-xl border border-red-500/20">
+              <h3 className="text-sm font-bold text-orange-400 mb-2 flex items-center gap-2">
+                <span>🎯</span> NEW: Orchestrator
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                <strong className="text-white">Combine multiple agents</strong> with if-else logic!
+              </p>
+              <code className="text-[10px] bg-black/30 px-2 py-1 rounded text-green-400 block mt-2">
+                /orchestrator security → phantom → codeninja
+              </code>
+            </div>
+          </div>
+
+          {/* Quick Examples */}
+          <div className="mt-4 p-4 bg-black/30 rounded-xl border border-white/5">
+            <h4 className="text-xs font-bold text-neutral-400 mb-3 tech-font uppercase tracking-widest">Quick Vibe Examples</h4>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: '"security expert"', desc: '→ Gets Sentinel agent' },
+                { label: '"fast bug finder"', desc: '→ Gets Phantom tester' },
+                { label: '"make my code pretty"', desc: '→ Gets UX Guru' },
+                { label: '"help me deploy"', desc: '→ Gets Nexus DevOps' },
+              ].map((ex, i) => (
+                <div key={i} className="bg-white/5 px-3 py-2 rounded-lg text-xs">
+                  <span className="text-emerald-400">{ex.label}</span>
+                  <span className="text-neutral-500"> {ex.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </details>
+      </section>
+
       {view === "architect" ? (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
           {/* Editor Side */}
