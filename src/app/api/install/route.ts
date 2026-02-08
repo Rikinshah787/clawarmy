@@ -14,28 +14,21 @@ export async function POST(req: NextRequest) {
         const rootDir = process.cwd();
         const safeSlug = name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-        // Try to get real skill content
         let skillContent = content;
         let workflowContent = "";
 
-        // If agentId provided, fetch real skill from local agents
         if (agentId) {
             const agent = localAgents.find((a: any) => a.id === agentId);
             if (agent && agent.skillPath) {
                 try {
                     const skillPath = path.join(rootDir, agent.skillPath);
                     skillContent = await fs.readFile(skillPath, 'utf-8');
-                } catch {
-                    // Fall back to provided content
-                }
+                } catch { }
 
-                // Try to get workflow
                 const workflowPath = path.join(rootDir, '.agent', 'workflows', `${safeSlug}.md`);
                 try {
                     workflowContent = await fs.readFile(workflowPath, 'utf-8');
-                } catch {
-                    // Generate default workflow
-                }
+                } catch { }
             }
         }
 
@@ -43,7 +36,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Content is required" }, { status: 400 });
         }
 
-        // 1. Install Agent Skill
         const agentsDir = path.join(rootDir, "agents");
         const agentFolder = path.resolve(agentsDir, safeSlug);
 
@@ -54,7 +46,6 @@ export async function POST(req: NextRequest) {
         await fs.mkdir(agentFolder, { recursive: true });
         await fs.writeFile(path.join(agentFolder, "SKILL.md"), skillContent, "utf8");
 
-        // 2. Install Workflow
         const workflowsDir = path.join(rootDir, ".agent", "workflows");
         const workflowFile = path.resolve(workflowsDir, `${safeSlug}.md`);
 
@@ -66,7 +57,7 @@ export async function POST(req: NextRequest) {
         const finalWorkflow = workflowContent || `---
 description: Activates the ${name} specialist
 ---
-# 👤 ${name} Activation
+# ${name} Activation
 
 1. Read the instructions in \`agents/${safeSlug}/SKILL.md\`.
 2. Adopt the persona and follow all protocols.
@@ -74,7 +65,6 @@ description: Activates the ${name} specialist
 ## Quick Commands
 
 \`\`\`
-# Activate agent
 /${safeSlug} "your request"
 \`\`\`
 `;
@@ -89,7 +79,7 @@ description: Activates the ${name} specialist
         });
     } catch (error) {
         console.error("Installation error:", error);
-        return NextResponse.json({ error: "Failed to install agent to workspace" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to install agent" }, { status: 500 });
     }
 }
 
@@ -101,43 +91,33 @@ export async function GET(req: NextRequest) {
     const rootDir = process.cwd();
 
     if (syncAll) {
-        // Return script that installs ALL agents with REAL skills
-        let fullScript = `echo "--- ClawArmy Universal Sync: Installing ALL Agents with Full Skills ---"\n`;
-        fullScript += `if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }\n`;
-        fullScript += `if (!(Test-Path ".agent/workflows")) { New-Item -ItemType Directory -Force -Path ".agent/workflows" }\n`;
+        let fullScript = `Write-Host "--- ClawArmy Universal Sync ---" -ForegroundColor Cyan\n`;
+        fullScript += `New-Item -ItemType Directory -Force -Path "agents" | Out-Null\n`;
+        fullScript += `New-Item -ItemType Directory -Force -Path ".agent/workflows" | Out-Null\n`;
 
         for (const agent of localAgents as any[]) {
             const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-            // Read real skill content
             let skillContent = "";
             if (agent.skillPath) {
                 try {
-                    const skillPath = path.join(rootDir, agent.skillPath);
-                    skillContent = await fs.readFile(skillPath, 'utf-8');
+                    skillContent = await fs.readFile(path.join(rootDir, agent.skillPath), 'utf-8');
                 } catch {
-                    skillContent = `---\nname: ${agent.name}\ndescription: ${agent.persona}\n---\n${agent.instructions}`;
+                    skillContent = `---\nname: ${agent.name}\n---\n${agent.instructions || ""}`;
                 }
             } else {
-                skillContent = `---\nname: ${agent.name}\ndescription: ${agent.persona}\n---\n${agent.instructions}`;
+                skillContent = `---\nname: ${agent.name}\n---\n${agent.instructions || ""}`;
             }
 
-            // Escape for PowerShell
-            const safeContent = skillContent
-                .replace(/\$/g, '`$')
-                .replace(/"/g, '`"')
-                .replace(/\r\n/g, '\n');
+            // Base64 encode to avoid all escaping issues
+            const skillB64 = Buffer.from(skillContent, 'utf-8').toString('base64');
 
-            fullScript += `
-echo "Deploying Agent: ${agent.name}..."
-if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" }
-@"
-${safeContent}
-"@ | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
-`;
+            fullScript += `Write-Host "Installing ${agent.name}..." -ForegroundColor Yellow\n`;
+            fullScript += `New-Item -ItemType Directory -Force -Path "agents/${slugName}" | Out-Null\n`;
+            fullScript += `[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${skillB64}")) | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8\n`;
         }
 
-        fullScript += `echo "[SUCCESS] Sync Complete. ${localAgents.length} agents with full skills installed."\n`;
+        fullScript += `Write-Host "[SUCCESS] ${localAgents.length} agents installed!" -ForegroundColor Green\n`;
 
         return new NextResponse(fullScript, {
             headers: { "Content-Type": "text/plain" }
@@ -146,7 +126,6 @@ ${safeContent}
 
     if (!agentId) return new NextResponse("Usage: ?get=agent-name or ?sync=all", { status: 400 });
 
-    // Find agent
     const searchTerm = agentId.toLowerCase();
     let agent: any = localAgents.find((a: any) =>
         a.id === searchTerm ||
@@ -154,7 +133,6 @@ ${safeContent}
         a.name.replace(/[^a-z0-9]/gi, "-").toLowerCase() === searchTerm
     );
 
-    // Check Supabase if not found locally
     if (!agent) {
         try {
             const { getSupabase } = await import("@/lib/supabase");
@@ -174,7 +152,9 @@ ${safeContent}
                         name: dbAgent.name,
                         persona: dbAgent.persona,
                         instructions: dbAgent.instructions,
-                        capabilities: dbAgent.capabilities
+                        skillPath: null,
+                        skill_content: dbAgent.skill_content,
+                        workflow_content: dbAgent.workflow_content
                     };
                 }
             }
@@ -189,15 +169,16 @@ ${safeContent}
 
     const slugName = agent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-    // Get REAL skill content
+    // Get skill content
     let skillContent = "";
     if (agent.skillPath) {
         try {
-            const skillPath = path.join(rootDir, agent.skillPath);
-            skillContent = await fs.readFile(skillPath, 'utf-8');
+            skillContent = await fs.readFile(path.join(rootDir, agent.skillPath), 'utf-8');
         } catch {
             skillContent = `---\nname: ${agent.name}\ndescription: ${agent.persona || ""}\n---\n${agent.instructions || ""}`;
         }
+    } else if (agent.skill_content) {
+        skillContent = agent.skill_content;
     } else {
         skillContent = `---\nname: ${agent.name}\ndescription: ${agent.persona || ""}\n---\n${agent.instructions || ""}`;
     }
@@ -205,56 +186,44 @@ ${safeContent}
     // Get workflow content
     let workflowContent = "";
     try {
-        const workflowPath = path.join(rootDir, '.agent', 'workflows', `${slugName}.md`);
-        workflowContent = await fs.readFile(workflowPath, 'utf-8');
+        workflowContent = await fs.readFile(path.join(rootDir, '.agent', 'workflows', `${slugName}.md`), 'utf-8');
     } catch {
-        // Generate default workflow
-        workflowContent = `---
+        if (agent.workflow_content) {
+            workflowContent = agent.workflow_content;
+        } else {
+            workflowContent = `---
 description: Activates the ${agent.name} specialist
 ---
 # ${agent.name} Activation
 
-1. Read the instructions in \`agents/${slugName}/SKILL.md\`.
-2. Adopt the persona and follow all protocols.
+1. Read \`agents/${slugName}/SKILL.md\`
+2. Adopt the persona
 
-## Quick Commands
-
+## Quick Command
 \`\`\`
-# Activate agent
 /${slugName} "your request"
 \`\`\``;
+        }
     }
 
-    // Escape for PowerShell
-    const safeContent = skillContent
-        .replace(/\$/g, '`$')
-        .replace(/"/g, '`"')
-        .replace(/\r\n/g, '\n');
-
-    const safeWorkflow = workflowContent
-        .replace(/\$/g, '`$')
-        .replace(/"/g, '`"')
-        .replace(/\r\n/g, '\n');
+    // Base64 encode to avoid PowerShell escaping issues
+    const skillB64 = Buffer.from(skillContent, 'utf-8').toString('base64');
+    const workflowB64 = Buffer.from(workflowContent, 'utf-8').toString('base64');
 
     const script = `
-echo "Initializing ClawArmy Deployment: ${agent.name}..."
-if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" }
-if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" }
-if (!(Test-Path ".agent")) { New-Item -ItemType Directory -Force -Path ".agent" }
-if (!(Test-Path ".agent/workflows")) { New-Item -ItemType Directory -Force -Path ".agent/workflows" }
-@"
-${safeContent}
-"@ | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
-echo "[SUCCESS] SKILL.md installed."
-@"
-${safeWorkflow}
-"@ | Out-File -FilePath ".agent/workflows/${slugName}.md" -Encoding utf8
-echo "[SUCCESS] Workflow installed. Use /${slugName} to activate."
-echo "[COMPLETE] ${agent.name} is now operational!"
+Write-Host "Initializing ClawArmy Deployment: ${agent.name}..." -ForegroundColor Cyan
+New-Item -ItemType Directory -Force -Path "agents" | Out-Null
+New-Item -ItemType Directory -Force -Path "agents/${slugName}" | Out-Null
+New-Item -ItemType Directory -Force -Path ".agent" | Out-Null
+New-Item -ItemType Directory -Force -Path ".agent/workflows" | Out-Null
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${skillB64}")) | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
+Write-Host "[OK] SKILL.md installed" -ForegroundColor Green
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${workflowB64}")) | Out-File -FilePath ".agent/workflows/${slugName}.md" -Encoding utf8
+Write-Host "[OK] Workflow installed" -ForegroundColor Green
+Write-Host "[COMPLETE] ${agent.name} is operational! Use /${slugName} to activate." -ForegroundColor Cyan
 `;
 
     return new NextResponse(script, {
         headers: { "Content-Type": "text/plain" }
     });
 }
-
