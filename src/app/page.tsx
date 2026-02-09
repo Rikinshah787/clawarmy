@@ -448,11 +448,18 @@ description: Activates the ${targetConfig.name} specialist
 `;
 
     try {
+      // Optimize the payload: don't send the full instructions twice
+      // We send them in skillContent, and truncate them in the search-only 'instructions' field
+      const leanConfig = {
+        ...targetConfig,
+        instructions: targetConfig.instructions?.substring(0, 1000) // Truncate for DB indexed field
+      };
+
       const response = await fetch("/api/agents/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...targetConfig,
+          ...leanConfig,
           priority: targetPriority,
           submitter_id: submitterId,
           skillContent: markdown,
@@ -461,8 +468,8 @@ description: Activates the ${targetConfig.name} specialist
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Auto-shorten API error:", response.status, errorText);
+        const errorData = await response.json().catch(() => ({ error: "Unknown Error" }));
+        console.error("Auto-shorten API error:", response.status, errorData);
         return null;
       }
       const data = await response.json();

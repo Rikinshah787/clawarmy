@@ -152,16 +152,16 @@ description: Activates the ${name} specialist
         } else if (error.code === '23502') {
             errorMessage = "Required fields are missing.";
             statusCode = 400;
-        } else if (error.message?.includes('JSON')) {
-            errorMessage = "Invalid data format.";
-            statusCode = 400;
         } else if (error.message) {
             errorMessage = error.message;
         }
 
+        // Return the specific error message to help debugging
         return NextResponse.json({
             error: errorMessage,
-            code: error.code || "UNKNOWN"
+            code: error.code || "UNKNOWN",
+            details: error.details || null,
+            hint: error.hint || null
         }, { status: statusCode });
     }
 }
