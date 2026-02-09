@@ -156,7 +156,7 @@ description: Activates the ${agent.name}
                 const { data: dbAgent } = await supabase
                     .from('agents')
                     .select('*')
-                    .eq('status', 'approved')
+                    .or('status.eq.approved,status.eq.pending')
                     .or(`slug.eq.${searchTerm},name.ilike.${searchTerm}`)
                     .single();
 
@@ -225,15 +225,27 @@ description: Activates the ${agent.name} specialist
     const workflowB64 = Buffer.from(workflowContent, 'utf-8').toString('base64');
 
     const script = `
+# ClawArmy Tactical Deployment: ${agent.name}
+$slugName = "${slugName}"
+$agentDir = "agents/$slugName"
+$workflowDir = ".agent/workflows"
+
 Write-Host "Initializing ClawArmy Deployment: ${agent.name}..." -ForegroundColor Cyan
+
 if (!(Test-Path "agents")) { New-Item -ItemType Directory -Force -Path "agents" | Out-Null }
-if (!(Test-Path "agents/${slugName}")) { New-Item -ItemType Directory -Force -Path "agents/${slugName}" | Out-Null }
+if (!(Test-Path $agentDir)) { New-Item -ItemType Directory -Force -Path $agentDir | Out-Null }
 if (!(Test-Path ".agent")) { New-Item -ItemType Directory -Force -Path ".agent" | Out-Null }
-if (!(Test-Path ".agent/workflows")) { New-Item -ItemType Directory -Force -Path ".agent/workflows" | Out-Null }
-[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${skillB64}")) | Out-File -FilePath "agents/${slugName}/SKILL.md" -Encoding utf8
+if (!(Test-Path $workflowDir)) { New-Item -ItemType Directory -Force -Path $workflowDir | Out-Null }
+
+$skillB64 = "${skillB64}"
+$workflowB64 = "${workflowB64}"
+
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($skillB64)) | Out-File -FilePath "$agentDir/SKILL.md" -Encoding utf8
 Write-Host "[OK] SKILL.md installed" -ForegroundColor Green
-[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${workflowB64}")) | Out-File -FilePath ".agent/workflows/${slugName}.md" -Encoding utf8
+
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($workflowB64)) | Out-File -FilePath "$workflowDir/$slugName.md" -Encoding utf8
 Write-Host "[OK] Workflow installed" -ForegroundColor Green
+
 Write-Host "[COMPLETE] ${agent.name} is operational! Use /${slugName} to activate." -ForegroundColor Cyan
 `;
 

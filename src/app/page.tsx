@@ -379,7 +379,7 @@ pause`;
 
   const downloadMissionBat = (targetConfig: AgentConfig, targetPriority: string) => {
     const mdContent = generateMarkdown(targetConfig, targetPriority);
-    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase();
+    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
 
     const workflowContent = `---
 description: Activates the ${targetConfig.name} specialist
@@ -387,7 +387,11 @@ description: Activates the ${targetConfig.name} specialist
 1. Read the instructions in \`agents/${slug}/SKILL.md\`.
 2. Adopt the persona and wait for user input.`;
 
-    // Create a self-extracting PowerShell one-liner in a BAT file
+    // Base64 encode the contents to avoid issues with special characters in the BAT file
+    const skillB64 = btoa(unescape(encodeURIComponent(mdContent)));
+    const flowB64 = btoa(unescape(encodeURIComponent(workflowContent)));
+
+    // Create a robust BAT file that uses PowerShell to decode and write files
     const batContent = `@echo off
 TITLE ClawArmy Deployment: ${targetConfig.name}
 echo ==========================================
@@ -396,7 +400,15 @@ echo ==========================================
 echo [AGENT]: ${targetConfig.name}
 echo.
 
-powershell -Command "$skill = @'\n${mdContent.replace(/'/g, "''")}\n'@; $flow = @'\n${workflowContent.replace(/'/g, "''")}\n'@; if (!(Test-Path 'agents/${slug}')) { New-Item -ItemType Directory -Path 'agents/${slug}' -Force }; if (!(Test-Path '.agent/workflows')) { New-Item -ItemType Directory -Path '.agent/workflows' -Force }; Set-Content -Path 'agents/${slug}/SKILL.md' -Value $skill -Encoding UTF8; Set-Content -Path '.agent/workflows/${slug}.md' -Value $flow -Encoding UTF8"
+powershell -NoProfile -Command ^
+  "$skillB64 = '${skillB64}';" ^
+  "$flowB64 = '${flowB64}';" ^
+  "$skill = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($skillB64));" ^
+  "$flow = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($flowB64));" ^
+  "if (!(Test-Path 'agents/${slug}')) { New-Item -ItemType Directory -Path 'agents/${slug}' -Force | Out-Null };" ^
+  "if (!(Test-Path '.agent/workflows')) { New-Item -ItemType Directory -Path '.agent/workflows' -Force | Out-Null };" ^
+  "Set-Content -Path 'agents/${slug}/SKILL.md' -Value $skill -Encoding UTF8;" ^
+  "Set-Content -Path '.agent/workflows/${slug}.md' -Value $flow -Encoding UTF8;"
 
 echo.
 echo [SUCCESS] Mission deployed! Use /${slug} to begin.
@@ -423,6 +435,39 @@ pause`;
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const AGENTS_PER_PAGE = 9;
 
+  const autoPublishAgent = async (targetConfig: AgentConfig, targetPriority: string) => {
+    const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const submitterId = localStorage.getItem('agentarmy_uid') || 'anonymous';
+    const markdown = generateMarkdown(targetConfig, targetPriority);
+
+    const workflowContent = `---
+description: Activates the ${targetConfig.name} specialist
+---
+1. Read the instructions in \`agents/${slug}/SKILL.md\`.
+2. Adopt the persona and wait for user input.
+`;
+
+    try {
+      const response = await fetch("/api/agents/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...targetConfig,
+          priority: targetPriority,
+          submitter_id: submitterId,
+          skillContent: markdown,
+          workflowContent: workflowContent
+        }),
+      });
+
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.success ? slug : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const handleMissionDeploy = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
     const targetConfig = overrideConfig || config;
     const targetPriority = overridePriority || priority;
@@ -430,13 +475,13 @@ pause`;
 
     if (!isLocal) {
       // Generate INLINE PowerShell script that creates the agent directly
-      // This way custom agents work without being in the database
       const markdown = generateMarkdown(targetConfig, targetPriority);
-      const escapedMarkdown = markdown
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '`"')
-        .replace(/\$/g, '`$')
-        .replace(/\r\n/g, '\n');
+      const workflowContent = `---
+description: Activates the ${targetConfig.name} specialist
+---
+1. Read the instructions in \`agents/${slug}/SKILL.md\`.
+2. Adopt the persona and wait for user input.
+`;
 
       const inlineScript = `
 # ClawArmy Tactical Deployment: ${targetConfig.name}
@@ -448,20 +493,14 @@ Write-Host "Initializing ClawArmy Deployment: ${targetConfig.name}..." -Foregrou
 if (!(Test-Path $agentDir)) { New-Item -ItemType Directory -Force -Path $agentDir | Out-Null }
 if (!(Test-Path $workflowDir)) { New-Item -ItemType Directory -Force -Path $workflowDir | Out-Null }
 
-$skillContent = @"
-${escapedMarkdown}
-"@
+$skillB64 = "${btoa(unescape(encodeURIComponent(markdown)))}"
+$flowB64 = "${btoa(unescape(encodeURIComponent(workflowContent)))}"
 
-$workflowContent = @"
----
-description: Activates the ${targetConfig.name} specialist
----
-1. Read the instructions in \`agents/${slug}/SKILL.md\`.
-2. Adopt the persona and wait for user input.
-"@
+$skill = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($skillB64))
+$flow = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($flowB64))
 
-$skillContent | Out-File -FilePath "$agentDir/SKILL.md" -Encoding utf8
-$workflowContent | Out-File -FilePath "$workflowDir/${slug}.md" -Encoding utf8
+$skill | Out-File -FilePath "$agentDir/SKILL.md" -Encoding utf8
+$flow | Out-File -FilePath "$workflowDir/${slug}.md" -Encoding utf8
 
 Write-Host "[SUCCESS] ${targetConfig.name} is now operational!" -ForegroundColor Green
 Write-Host "Use /${slug} in Antigravity to activate." -ForegroundColor Yellow
@@ -469,7 +508,25 @@ Write-Host "Use /${slug} in Antigravity to activate." -ForegroundColor Yellow
 
       // Encode as base64 for clean transfer
       const encoded = btoa(unescape(encodeURIComponent(inlineScript)));
-      const cmd = `powershell -Command "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${encoded}')) | iex"`;
+      let cmd = `powershell -Command "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${encoded}')) | iex"`;
+
+      if (cmd.length > 8000) {
+        setInstallStatus({ type: "loading", msg: "📡 INTEL_OVERLOAD: Command too large. Auto-shortening via Mission Server..." });
+
+        const autoShortSlug = await autoPublishAgent(targetConfig, targetPriority);
+
+        if (autoShortSlug) {
+          cmd = `powershell -Command "iwr -useb https://${window.location.host}/api/install?get=${autoShortSlug} | iex"`;
+          navigator.clipboard.writeText(cmd);
+          setInstallStatus({ type: "success", msg: "⚡ MAGIC_LINK_COPIED: Command auto-shortened! Paste in project root." });
+          setTimeout(() => setInstallStatus(null), 6000);
+          return;
+        }
+
+        setInstallStatus({ type: "error", msg: "⚠️ TRANSMISSION_FAILURE: Could not auto-shorten. Please use 'DOWNLOAD_BAT' or 'EXPORT_ZIP' below." });
+        setTimeout(() => setInstallStatus(null), 8000);
+        return;
+      }
 
       navigator.clipboard.writeText(cmd);
       setInstallStatus({ type: "success", msg: "⚡ MAGIC_COMMAND_COPIED: Paste in your project root to auto-deploy mission." });
@@ -696,7 +753,7 @@ pause`;
             </div>
             <span className="text-neutral-500 group-open:rotate-180 transition-transform text-xl">▼</span>
           </summary>
-          
+
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-white/10">
             {/* What is ClawArmy */}
             <div className="bg-white/5 p-4 rounded-xl border border-white/10">
@@ -704,7 +761,7 @@ pause`;
                 <span>🤖</span> What is ClawArmy?
               </h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                ClawArmy is an <strong className="text-white">AI Agent Marketplace</strong> for Antigravity (Google DeepMind's AI IDE). 
+                ClawArmy is an <strong className="text-white">AI Agent Marketplace</strong> for Antigravity (Google DeepMind's AI IDE).
                 Create, customize, and deploy specialized AI personas that help you code faster and smarter.
               </p>
             </div>
@@ -715,7 +772,7 @@ pause`;
                 <span>✨</span> For Vibe Coders
               </h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                <strong className="text-white">Just describe what you want!</strong> Type "security ninja who tests my code" 
+                <strong className="text-white">Just describe what you want!</strong> Type "security ninja who tests my code"
                 and we'll auto-generate a perfect AI agent. No config needed - pure vibes.
               </p>
             </div>
