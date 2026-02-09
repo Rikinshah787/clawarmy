@@ -460,10 +460,15 @@ description: Activates the ${targetConfig.name} specialist
         }),
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Auto-shorten API error:", response.status, errorText);
+        return null;
+      }
       const data = await response.json();
       return data.success ? slug : null;
     } catch (e) {
+      console.error("Auto-shorten fetch exception:", e);
       return null;
     }
   };
@@ -471,6 +476,14 @@ description: Activates the ${targetConfig.name} specialist
   const handleMissionDeploy = async (overrideConfig?: AgentConfig, overridePriority?: string) => {
     const targetConfig = overrideConfig || config;
     const targetPriority = overridePriority || priority;
+
+    // Validation: Require name and persona
+    if (!targetConfig.name?.trim() || !targetConfig.persona?.trim()) {
+      setInstallStatus({ type: "error", msg: "❌ MISSION_INCOMPLETE: Agent Designation and Persona are required." });
+      setTimeout(() => setInstallStatus(null), 4000);
+      return;
+    }
+
     const slug = targetConfig.name.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, "");
 
     if (!isLocal) {
