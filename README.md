@@ -7,7 +7,7 @@
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://clawarmy.vercel.app)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-Antigravity-red?style=for-the-badge)](https://github.com/vudovn/antigravity)
 
-**ClawArmy** is an elite "Mission Control" platform for designing, deploying, and synchronizing AI Agent Specialists (**Antigravity Skills**). It enables developers to synthesize custom agent squads and inject them directly into their local workspaces with zero-friction automation.
+**ClawArmy** is an elite "Mission Control" platform for designing, deploying, and synchronizing AI Agent Specialists (**Skills**). It enables developers to synthesize custom agent squads and inject them directly into their local workspaces with zero-friction automation.
 
 ---
 
